@@ -1,4 +1,4 @@
-image: nix:latest
+image: nixos/nix:latest
 
 before_script:
   - nix-channel --add https://nixos.org/channels/nixpkgs-unstable nixpkgs
@@ -6,4 +6,6 @@ before_script:
 
 build_infrastructure:
   stage: build
-  script: nix-build infrastructure/default.nix
+  script:
+    - cd mls/infrastructure
+    - nix-build default.nix
