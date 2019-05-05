@@ -1,0 +1,9 @@
+image: nix:latest
+
+before_script:
+  - nix-channel --add https://nixos.org/channels/nixpkgs-unstable nixpkgs
+  - nix-channel --update
+
+build_infrastructure:
+  stage: build
+  script: nix-build infrastructure/default.nix
