@@ -32,12 +32,4 @@ def check_module_codestyle(path):
 
 
 def test_module_codestyle():
-    check_module_codestyle('./t9')
-
-
-def test_server_codestyle():
-    check_module_codestyle('./server')
-
-
-def test_test_codestyle():
-    check_module_codestyle('./tests')
+    check_module_codestyle('./')
