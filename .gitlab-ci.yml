@@ -7,5 +7,5 @@ before_script:
 build_infrastructure:
   stage: build
   script:
-    - cd mls/infrastructure
+    - cd infrastructure
     - nix-build default.nix
