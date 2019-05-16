@@ -2,21 +2,32 @@
 [![coverage report](https://git.fh-muenster.de/masterprojekt-mls/implementation/badges/master/coverage.svg)](https://git.fh-muenster.de/masterprojekt-mls/implementation/commits/master)
 
 
-README Work in Progress
+(Der Coveragewert ist das Arithmetische Mittel aus allen Coveragewerten, siehe [hier](https://gitlab.com/gitlab-org/gitlab-ce/issues/22158))
 # MLS Umsetzung
 
-Dieses Repository vereint sowohl die Implementierung von MLS als [Chatprotokoll](https://datatracker.ietf.org/doc/draft-ietf-mls-protocol/)
+Dieses Repository vereint sowohl die Implementierung von MLS als [Chatprotokoll](https://datatracker.ietf.org/doc/draft-ietf-mls-protocol/),
 als auch eine Umsetzung von Tooling, das notwendig ist um einen Chatserver auf dem Protokoll zu
 betreiben (vgl [draft-ietf-mls-architecture](https://datatracker.ietf.org/doc/draft-ietf-mls-architecture/)).
+
+## Build Artefakte
+
+Für freundliche Projektbetreuer stellt dieses Projekt (dank CI) Buildartefakte zum
+direkten Download zur Verfügung, sodass kein keine Dev-Umgebung aufgesetzen werden muss.
+
+### Download
+** WORK IN PROGRESS **
+
+### Using this Software
+** WORK IN PROGRESS **
 
 ## Development
 
 ### Tooling
 #### Nix
-Dieses Projekt nutzt das [Nix Build Tool](https://nixos.org/nix/). Um das projekt zu bauen,
-muss lediglich `nix-build` eingegeben werden.
+Dieses Projekt nutzt das [Nix Build Tool](https://nixos.org/nix/). Um das Projekt zu bauen,
+muss lediglich `nix-build` eingegeben werden. Üblicherweise reicht zur Installation ein `curl https://nixos.org/nix/install | sh`
 
-**Installationshinweis für Arch Nutzer**
+##### Installationshinweis für Arch Nutzer
 Bei Installationsfehler "Clone Operation not permitted":
 https://github.com/NixOS/nix/issues/2633
 
@@ -38,6 +49,11 @@ Sollte sich der Masterstand während der Laufzeit eures Branches ändern, **merg
 den master stand in ihn rein um ihn zu updaten, sondern **rebased** ihn, also
 `git pull --rebase origin master` auf eurem Branch. 
 
+Bitte merged keine _Kaffeepausen_-Commits in den Master und gebt Ihnen sinnvolle Commitmassages 
+auf **DEUTSCH**. Auf euren Dev-Branches kann eure History aussehen wie sie will, ihr solltet sie
+nur mittels eines `git rebase -i HEAD~n`, mit `n` als Commit-Anzahl in eurem Branch, vor einem Merge
+umschreiben.
+
 #### CI
 
 Dieses Projekt nutzt CI. Bei jedem Pull request wird die Software gebaut, alle Tests sowie
@@ -47,9 +63,7 @@ der [Linter](#Linter) ausgeführt.
 
 Da in diesem Projekt Leute mit sehr diversen Background mitarbeiten, wird ein Linter genutzt 
 um einen gemeinsamen Codestyle zu erreichen, den jeder gut lesen kann. Im Falle der Python-Projekte 
-ist dies `pylint`, für Rust `xxx`
-
-### Workflow
+ist dies `pylint`, für Rust folgt bald noch einer.
 
 ## Projektstruktur
 
@@ -57,7 +71,7 @@ ist dies `pylint`, für Rust `xxx`
 .
 ├── infrastructure
 │   ├── authserver
-│   ├── clientmls
+│   ├── chatclient
 │   ├── dirserver
 │   │   ├── dirserver
 │   │   └── tests
@@ -71,7 +85,7 @@ ist dies `pylint`, für Rust `xxx`
 `infrastructure`: 
 - `authserver`: Implementierung des AS 
 - `dirserver`: Implementierung des Directory Servers
-- `clientmls`: Ein MLS Chat client mit GUI
-- `tests`: Globale Tests für alle infrastruktur projekte
+- `chatclient`: Ein MLS Chat client mit GUI
+- `tests`: Globale (Integration-)Tests für alle Infrastruktur projekte
 
 
