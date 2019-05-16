@@ -1,15 +1,15 @@
 from flask import Flask
 
-app = Flask(__name__)
+APP = Flask(__name__)
 
 
-@app.route('/')
+@APP.route('/')
 def index():
     return "MLS DIR SERVER"
 
 
 def main():
-    app.run(host='0.0.0.0')
+    APP.run(host='0.0.0.0')
 
 
 if __name__ == '__main__':

@@ -9,11 +9,12 @@ python37Packages.buildPythonApplication rec {
   src = ./.;
   propagatedBuildInputs = with python37Packages; [ flask ];
 
-  checkInputs =  with python37Packages; [ pytest pylint ];
+  checkInputs =  with python37Packages; [ pytest pylint pytestcov ];
 
   doCheck = true;
 
   checkPhase = ''
-    py.test tests
+    mkdir -p $out/logs
+    py.test --cov=dirserver tests | tee $out/logs/test.log
   '';
 }

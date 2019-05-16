@@ -1,6 +1,7 @@
 
 #ignore nix results
-result/
+**/result
+**/result-2
 
 #ignore intellij
 .idea/
