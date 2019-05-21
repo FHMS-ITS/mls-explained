@@ -1,20 +1,13 @@
-with import <nixpkgs> {};
-with python37Packages;
+let
+    pkgs = import <nixpkgs>{};
+    output = import ../buildPythonAppAndEnv.nix rec {
+        inherit pkgs;
+        pname = "mls-dirserver";
+        version = "0.1";
 
-#see https://nixos.org/nixpkgs/manual/#building-packages-and-applications
-python37Packages.buildPythonApplication rec {
-  pname = "mls-dirserver";
-  version = "1.0";
+        src = ./.;
 
-  src = ./.;
-  propagatedBuildInputs = with python37Packages; [ flask ];
-
-  checkInputs =  with python37Packages; [ pytest pylint pytestcov ];
-
-  doCheck = true;
-
-  checkPhase = ''
-    mkdir -p $out/logs
-    py.test --cov=dirserver tests | tee $out/logs/test.log
-  '';
-}
+        propagatedBuildInputs = with pkgs.python37Packages; [ flask ];
+        checkInputs = with pkgs.python37Packages; [ pytest pylint pytestcov ];
+    };
+in output

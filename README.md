@@ -65,6 +65,18 @@ Da in diesem Projekt Leute mit sehr diversen Background mitarbeiten, wird ein Li
 um einen gemeinsamen Codestyle zu erreichen, den jeder gut lesen kann. Im Falle der Python-Projekte 
 ist dies `pylint`, für Rust folgt bald noch einer.
 
+#### Python Environments
+Damit IDEs wie Pycharm wissen, was alles installiert ist und um Autocompletion hilfe zu
+geben, werden zu jedem python Projekt die Environments mit weggeschrieben.
+
+Dazu gibt es in jedem Python Projekt-Result (z.b. zum Dirserver) einen Ordner `env`.
+Hier liegt dann unter `env/bin/python3.7` ein Python interpreter, den ihr z.B. in
+Pycharm unter 
+`File=>Settings...=>Project=>Project Interpreter=>Zahnrad rechts=>Add...=>Add Existing Interpreter`
+angebt. In der Liste der installierten
+Packages werden zwar keine Einträge angezeigt, aber die Autocompletion geht. 
+Code ausführen solltet ihr am besten nur in der nix-shell des jeweiligen Projektes.
+
 ## Projektstruktur
 
 ```
