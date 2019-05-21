@@ -1,0 +1,14 @@
+[package]
+name = "mls-rust"
+version = "0.1.0"
+authors = ["Steffen Soddemann <ss914866@fh-muenster.de>",
+	   "Sebastian Staffa <ss964235@fh-muenster.de>",
+	   "Jan Hakman <jh097145@fh-muenster.de>"]
+
+[lib]
+name = "mls_rust"
+crate-type = ["dylib"]
+
+[dependencies.cpython]
+version = "0.1"
+features = ["extension-module"]
