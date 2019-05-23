@@ -1,12 +1,10 @@
 [package]
-name = "mls-rust"
+name = "mls-rustlib"
 version = "0.1.0"
-authors = ["Steffen Soddemann <ss914866@fh-muenster.de>",
-	   "Sebastian Staffa <ss964235@fh-muenster.de>",
-	   "Jan Hakman <jh097145@fh-muenster.de>"]
+authors = ["Bruno Rocha <rochacbruno@gmail.com>"]
 
 [lib]
-name = "mls_rust"
+name = "mlslib"
 crate-type = ["dylib"]
 
 [dependencies.cpython]
