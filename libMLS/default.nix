@@ -1,7 +1,7 @@
 with (import <nixpkgs> {});
 
 rustPlatform.buildRustPackage rec {
-  name = "mls-rust";
+  name = "MLS";
 
   buildInputs = [ python36 ];
   
