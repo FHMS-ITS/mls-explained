@@ -1,6 +1,6 @@
 let
     pkgs = import <nixpkgs>{};
-    output = import ../infrastructure/buildPythonAppAndEnv.nix rec {
+    output = import ../buildPythonAppAndEnv.nix rec {
         inherit pkgs;
         pname = "libMLS";
         version = "0.1";

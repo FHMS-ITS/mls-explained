@@ -9,5 +9,5 @@ let
     # symlink join merges two derivations
 in symlinkJoin {
     name ="mls-infrastructure";
-    paths = [ dirserver integration_test ];
+    paths = [ dirserver ];
 }

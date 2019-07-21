@@ -14,9 +14,19 @@ let
     app = pythonPackages.buildPythonApplication rec {
       inherit pname version src propagatedBuildInputs checkInputs;
 
+      #checkPhase = ''
+      #  mkdir -p $out/logs
+      #  mkdir -p ./temp
+      #  cp -r $src/* ./temp
+      #  cp $src/.pylintrc ./temp
+      #  cd ./temp
+      #  PYLINTRC=$src/.pylintrc py.test --cov=$pname -p no:cacheprovider tests | tee $out/logs/$pname_test.log
+      #  ls -lah
+      #'';
+
       checkPhase = ''
         mkdir -p $out/logs
-        py.test --cov=$pname tests | tee $out/logs/test.log
+        PYLINTRC=$src/.pylintrc py.test --cov=$pname tests | tee $out/logs/test.log
       '';
     };
 

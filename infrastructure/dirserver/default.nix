@@ -1,6 +1,6 @@
 let
     pkgs = import <nixpkgs>{};
-    output = import ../buildPythonAppAndEnv.nix rec {
+    output = import ../../buildPythonAppAndEnv.nix rec {
         inherit pkgs;
         pname = "dirserver";
         version = "0.1";
