@@ -16,7 +16,7 @@ let
 
       checkPhase = ''
         mkdir -p $out/logs
-        py.test --cov=dirserver tests | tee $out/logs/test.log
+        py.test --cov=$pname tests | tee $out/logs/test.log
       '';
     };
 

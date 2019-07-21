@@ -2,7 +2,7 @@ let
     pkgs = import <nixpkgs>{};
     output = import ../buildPythonAppAndEnv.nix rec {
         inherit pkgs;
-        pname = "mls-dirserver";
+        pname = "dirserver";
         version = "0.1";
 
         src = ./.;

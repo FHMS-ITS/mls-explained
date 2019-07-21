@@ -1,13 +1,13 @@
-with (import <nixpkgs> {});
+let
+    pkgs = import <nixpkgs>{};
+    output = import ../infrastructure/buildPythonAppAndEnv.nix rec {
+        inherit pkgs;
+        pname = "libMLS";
+        version = "0.1";
 
-rustPlatform.buildRustPackage rec {
-  name = "MLS";
+        src = ./.;
 
-  buildInputs = [ python36 ];
-  
-  system = builtins.currentSystem;
-  src = ./.;
-
-  cargoSha256 = "0ad3kk48fx15rs16c4mnh0dkaj25qjwbkjacv8jfnka0iq29ys5j";
-}
-
+        propagatedBuildInputs = with pkgs.python37Packages; [ flask cryptography ];
+        checkInputs = with pkgs.python37Packages; [ pytest pylint pytestcov ];
+    };
+in output
