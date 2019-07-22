@@ -1,6 +1,6 @@
 from math import ceil
 from typing import List, Optional
-from .tree_math import *
+from .tree_math import parent
 
 from libMLS.libMLS.abstract_tree_node import AbstractTreeNode
 

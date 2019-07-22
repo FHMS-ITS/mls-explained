@@ -1,5 +1,8 @@
 # The largest power of 2 less than n.Equivalent to:
 # int(math.floor(math.log(x, 2)))
+from typing import List
+
+
 def log2(x):
     if x == 0:
         return 0
@@ -109,46 +112,65 @@ def parent(node_index: int, num_leaves: int):
     return p
 
 
-# The other child of the node's parent.  Root's sibling is itself.
-def sibling(x, n):
-    p = parent(x, n)
-    if x < p:
-        return right(p, n)
-    elif x > p:
+def sibling(node_index: int, num_leaves: int):
+    """
+    The other child of the node's parent.  Root's sibling is itself.
+    :param node_index:
+    :param num_leaves:
+    :return:
+    """
+    p = parent(node_index, num_leaves)
+    if node_index < p:
+        return right(p, num_leaves)
+    elif node_index > p:
         return left(p)
 
     return p
 
 
-# The direct path of a node, ordered from the root
-# down, not including the root or the terminal node
-def direct_path(x, n):
+def direct_path(node_index: int, num_leaves: int):
+    """
+    The direct path of a node, ordered from the root
+    down, not including the root or the terminal node
+    :param node_index:
+    :param num_leaves:
+    :return:
+    """
     d = []
-    p = parent(x, n)
-    r = root(n)
+    p = parent(node_index, num_leaves)
+    r = root(num_leaves)
     while p != r:
         d.append(p)
-        p = parent(p, n)
+        p = parent(p, num_leaves)
     return d
 
 
-# The copath of the node is the siblings of the nodes on its direct
-# path (including the node itself)
-def copath(x, n):
-    d = direct_path(x, n)
-    if x != sibling(x, n):
-        d.append(x)
+def copath(nodex_index, num_leaves):
+    """
+    The copath of the node is the siblings of the nodes on its direct
+    path (including the node itself)
+    :param nodex_index:
+    :param num_leaves:
+    :return:
+    """
+    d = direct_path(nodex_index, num_leaves)
+    if nodex_index != sibling(nodex_index, num_leaves):
+        d.append(nodex_index)
 
-    return [sibling(y, n) for y in d]
+    return [sibling(y, num_leaves) for y in d]
 
 
-# Frontier is is the list of full subtrees, from left to right.  A
-# balance binary tree with n leaves has a full subtree for every
-# power of two where n has a bit set, with the largest subtrees
-# furthest to the left.  For example, a tree with 11 leaves has full
-# subtrees of size 8, 2, and 1.
-def frontier(n):
-    st = [1 << k for k in range(log2(n) + 1) if n & (1 << k) != 0]
+def frontier(num_leaves: int):
+    """
+    Frontier is is the list of full subtrees, from left to right.  A
+    balance binary tree with n leaves has a full subtree for every
+    power of two where n has a bit set, with the largest subtrees
+    furthest to the left.  For example, a tree with 11 leaves has full
+    subtrees of size 8, 2, and 1.
+    :param num_leaves:
+    :return:
+    """
+    st = [1 << k for k in range(log2(num_leaves) + 1) if num_leaves & (1 << k) != 0]
     st = reversed(st)
 
     base = 0
@@ -159,20 +181,30 @@ def frontier(n):
     return f
 
 
-# Leaves are in even-numbered nodes
-def leaves(n):
-    return [2 * i for i in range(n)]
+def leaves(num_nodes: int):
+    """
+    Leaves are in even-numbered nodes
+    :param num_nodes:
+    :return:
+    """
+    return [2 * i for i in range(num_nodes)]
 
 
-# The resolution of a node is the collection of non-blank
-# descendants of this node.  Here the tree is represented by a list
-# of nodes, where blank nodes are represented by None
-def resolve(tree, x, n):
-    if tree[x] is not None:
-        return [x]
+def resolve(tree: List, node_index: int, num_leaves: int):
+    """
+    The resolution of a node is the collection of non-blank
+    descendants of this node.  Here the tree is represented by a list
+    of nodes, where blank nodes are represented by None
+    :param tree:
+    :param node_index:
+    :param num_leaves:
+    :return:
+    """
+    if tree[node_index] is not None:
+        return [node_index]
 
-    if level(x) == 0:
+    if level(node_index) == 0:
         return []
-    L = resolve(tree, left(x), n)
-    R = resolve(tree, right(x, n), n)
+    L = resolve(tree, left(node_index), num_leaves)
+    R = resolve(tree, right(node_index, num_leaves), num_leaves)
     return L + R

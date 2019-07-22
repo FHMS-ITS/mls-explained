@@ -1,3 +1,7 @@
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.hashes import Hash
+from cryptography.hazmat.primitives.kdf.hkdf import HKDF
+from typing import Tuple
 
 
 class CipherSuite:
@@ -5,12 +9,22 @@ class CipherSuite:
     def __init__(self):
         return
 
-    def getEncryptionAlgorithm(self):
+    def get_encryption_algorithm(self, key: bytes, iv: bytes = bytes.fromhex('4fc8604d3aacc9ae5c3158e4c7e4d74e')):
         raise NotImplementedError()
 
-    def getHashFunction(self):
+    def get_hash(self) -> Hash:
         raise NotImplementedError()
 
-    def getCurve(self):
+    def get_curve(self):
         raise NotImplementedError()
 
+    def get_suite_identifier(self) -> int:
+        raise NotImplementedError()
+
+    def derive_key_pair(self, material: bytes) -> Tuple[bytes, bytes]:
+        """
+        Returns a public/private key pair computed from the given keying material
+        :param material:
+        :return: A tuple consisting of [public_key, private_key]
+        """
+        raise NotImplementedError()
