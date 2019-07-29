@@ -1,14 +1,40 @@
-from libMLS.libMLS.data_tree_node import DataTreeNode
-from libMLS.libMLS.state import State
+from libMLS.libMLS.messages import WelcomeInfoMessage, AddMessage
+from libMLS.libMLS.state import State, GroupContext
 from libMLS.libMLS.x25519_cipher_suite import X25519CipherSuite
 
 
 class Session:
 
-    def __init__(self, user_init_key: bytes, user_crendtials: bytes):
-        self._state = State(X25519CipherSuite(), user_init_key, user_crendtials)
+    def __init__(self, state: State):
+        self._state: State = state
 
-    def add_member(self, user_init_key: bytes, user_credential: bytes):
+    @classmethod
+    def from_welcome(cls, welcome: WelcomeInfoMessage) -> 'Session':
+        context: GroupContext = GroupContext(
+            group_id=welcome.group_id,
+            epoch=welcome.epoch,
+            tree_hash=b'0',
+            confirmed_transcript_hash=b'0'
+        )
+
+        state = State.from_existing(cipher_suite=X25519CipherSuite(), context=context, nodes=welcome.tree)
+        return cls(state)
+
+    @classmethod
+    def from_empty(cls, user_init_key: bytes, user_credentials: bytes) -> 'Session':
+        empty_context: GroupContext = GroupContext(
+            group_id=b'0',
+            epoch=0,
+            tree_hash=b'0',
+            confirmed_transcript_hash=b'0'
+        )
+        state = State.from_empty(cipher_suite=X25519CipherSuite(), context=empty_context, leaf_secret=user_init_key)
+        return cls(state)
+
+    def get_state(self) -> State:
+        return self._state
+
+    def add_member(self, user_init_key: bytes, user_credential: bytes) -> (WelcomeInfoMessage, AddMessage):
         """
         From draft-ietf-mls-protocol-07:
         In order to add a new member to the group, an existing member of the
@@ -20,7 +46,10 @@ class Session:
         :return:
         """
         # todo: Verify Keys and Cipher Suite support
-        self._state.add(user_init_key, user_credential)
+        return self._state.add(user_init_key, user_credential)
 
         # todo: Build welcome message
         # todo: Build add message
+
+    def process_add(self, add_message: AddMessage) -> None:
+        self._state.process_add(add_message=add_message)
