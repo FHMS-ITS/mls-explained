@@ -47,6 +47,9 @@ class Tree:
     def get_nodes(self) -> List[Optional[TreeNode]]:
         return self._nodes
 
+    def set_node(self, node_index: int, node: Optional[TreeNode]):
+        self._nodes[node_index] = node
+
     def add_leaf(self, node: TreeNode, leaf_index: Optional[int] = None) -> None:
         """
         Appends a node to the ratched tree

@@ -128,7 +128,7 @@ def sibling(node_index: int, num_leaves: int):
     return p
 
 
-def direct_path(node_index: int, num_leaves: int):
+def direct_path(node_index: int, num_leaves: int) -> List[int]:
     """
     The direct path of a node, ordered from the root
     down, not including the root or the terminal node
@@ -190,7 +190,7 @@ def leaves(num_nodes: int):
     return [2 * i for i in range(num_nodes)]
 
 
-def resolve(tree: List, node_index: int, num_leaves: int):
+def resolve(tree: List, node_index: int, num_leaves: int) -> List[int]:
     """
     The resolution of a node is the collection of non-blank
     descendants of this node.  Here the tree is represented by a list

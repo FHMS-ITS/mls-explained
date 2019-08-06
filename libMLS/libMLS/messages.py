@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from struct import pack
 
 from enum import Enum
-from typing import Union, List
+from typing import Union, List, Optional
 
 from libMLS.libMLS.tree_node import TreeNode
 
@@ -64,8 +64,28 @@ class AddMessage(AbstractMessage):
         return False
 
 
+@dataclass
+class DirectPathNode(AbstractMessage):
+    public_key: bytes
+    encrypted_path_secret: Optional[List['HPKECiphertext']]
+
+    def _pack(self) -> bytes:
+        pass
+
+    def validate(self) -> bool:
+        return False
+
+
+@dataclass
 class UpdateMessage(AbstractMessage):
-    pass
+
+    direct_path: List[DirectPathNode]
+
+    def _pack(self) -> bytes:
+        pass
+
+    def validate(self) -> bool:
+        pass
 
 
 class RemoveMessage(AbstractMessage):
@@ -131,6 +151,7 @@ class MLSPlaintext(AbstractMessage):
         )
 
 
+@dataclass
 class HPKECiphertext(AbstractMessage):
     ephemeral_key: bytes
     cipher_text: bytes

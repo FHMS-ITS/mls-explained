@@ -1,4 +1,6 @@
-from libMLS.libMLS.messages import WelcomeInfoMessage, AddMessage
+import os
+
+from libMLS.libMLS.messages import WelcomeInfoMessage, AddMessage, UpdateMessage
 from libMLS.libMLS.state import State, GroupContext
 from libMLS.libMLS.x25519_cipher_suite import X25519CipherSuite
 
@@ -48,8 +50,20 @@ class Session:
         # todo: Verify Keys and Cipher Suite support
         return self._state.add(user_init_key, user_credential)
 
-        # todo: Build welcome message
-        # todo: Build add message
+        # todo: Build encrypt welcome message
+        # todo: Build encrypt add message
 
     def process_add(self, add_message: AddMessage) -> None:
         self._state.process_add(add_message=add_message)
+
+    def update(self, leaf_index: int) -> UpdateMessage:
+        # TODO: ACTHUNG ACHTUNG RESEQUENCING
+        # DIESE METHODE IST NICHT RESEQUENCING SICHER
+        # Gegensätzlich zum RFC müssten wir auch das leaf secret mit versenden, damit wir im resequencing fall
+        # nicht unseren tree borken. Gerade erstzen wir das leaf secret sofort, wenn die update nachricht dann
+        # resequenced wird ist der updatende client raus. MLSpp von cisco hat das gleiche problem.
+
+        return self._state.update(leaf_index)
+
+    def process_update(self, update_message: UpdateMessage) -> None:
+        pass

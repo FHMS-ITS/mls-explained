@@ -1,6 +1,4 @@
-from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.hashes import Hash
-from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from typing import Tuple
 
 
