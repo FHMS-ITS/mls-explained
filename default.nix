@@ -13,10 +13,6 @@ let
 
     #integration_test = import ./integration-tests.nix;
 
-    # symlink join merges two derivations
-    output = pkgs.symlinkJoin {
-        name ="mls";
-        paths = [ infrastructure libMLS ];
-    };
+in pkgs.linkFarm "mls" [ {name="infrastructure"; path=infrastructure;} {name="libMLS";path=libMLS;} ]
 
 in output
