@@ -1,7 +1,6 @@
-import os
-
 from libMLS.libMLS.messages import WelcomeInfoMessage, AddMessage, UpdateMessage
-from libMLS.libMLS.state import State, GroupContext
+from libMLS.libMLS.state import State
+from libMLS.libMLS.group_context import GroupContext
 from libMLS.libMLS.x25519_cipher_suite import X25519CipherSuite
 
 
@@ -22,6 +21,8 @@ class Session:
         state = State.from_existing(cipher_suite=X25519CipherSuite(), context=context, nodes=welcome.tree)
         return cls(state)
 
+    # todo: Use user_credentials
+    # pylint: disable=unused-argument
     @classmethod
     def from_empty(cls, user_init_key: bytes, user_credentials: bytes) -> 'Session':
         empty_context: GroupContext = GroupContext(

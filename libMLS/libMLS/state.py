@@ -2,32 +2,15 @@ import os
 
 import copy
 
-from dataclasses import dataclass
 from typing import Optional, List
 
 from libMLS.libMLS.cipher_suite import CipherSuite
 from libMLS.libMLS.crypto import hkdf_expand_label
+from libMLS.libMLS.group_context import GroupContext
 from libMLS.libMLS.tree_math import parent, direct_path, sibling, copath, resolve
 from libMLS.libMLS.tree_node import TreeNode
 from libMLS.libMLS.messages import WelcomeInfoMessage, AddMessage, UpdateMessage, DirectPathNode, HPKECiphertext
 from libMLS.libMLS.tree import Tree
-
-
-@dataclass
-class GroupContext:
-    group_id: bytes
-    epoch: int
-    tree_hash: bytes
-    confirmed_transcript_hash: bytes
-
-    def __eq__(self, other):
-        if not isinstance(other, GroupContext):
-            return False
-
-        return self.group_id == other.group_id and \
-               self.epoch == other.epoch and \
-               self.confirmed_transcript_hash == other.confirmed_transcript_hash and \
-               self.tree_hash == other.tree_hash
 
 
 class State:
@@ -67,6 +50,8 @@ class State:
     def get_group_context(self) -> GroupContext:
         return self._context
 
+    # todo: user user_credential
+    # pylint: disable=unused-argument
     def add(self, user_init_key: bytes, user_credential: bytes) -> (WelcomeInfoMessage, AddMessage):
         welcome: WelcomeInfoMessage = WelcomeInfoMessage()
         welcome.epoch = self._context.epoch
@@ -80,6 +65,8 @@ class State:
         # self._tree.add_leaf(TreeNode(user_init_key, None, user_credential))
 
         # todo: support insert in the middle of a group
+        # Pylint currently has a problem with dataclasses
+        # pylint: disable=unexpected-keyword-arg
         add: AddMessage = AddMessage(index=self._tree.get_num_leaves(),
                                      init_key=user_init_key,
                                      welcome_info_hash=b'0')
@@ -109,8 +96,10 @@ class State:
 
         self._tree.set_node(leaf_index * 2, TreeNode.from_node_secret(node_secret=node_secret,
                                                                       cipher_suite=self._cipher_suite))
+        # Pylint currently has a problem with dataclasses
+        # pylint: disable=unexpected-keyword-arg
         nodes_out.append(DirectPathNode(public_key=self._tree.get_node(leaf_index).get_public_key(),
-                                        encrypted_path_secret=None))
+                                        encrypted_path_secret=[]))
 
         for conode_index in nodes_in_copath:
             node_index = parent(conode_index, self._tree.get_num_leaves())
@@ -128,11 +117,18 @@ class State:
             # encrypt the path secrect for the nodes in the copath
             resolution: List[int] = resolve(self._tree.get_nodes(), conode_index, self._tree.get_num_nodes())
             ciphers: List[HPKECiphertext] = []
+            # todo: This loop must be updated with Issue !6
+            # https://git.fh-muenster.de/masterprojekt-mls/implementation/issues/6
+            # pylint: disable=unused-variable
             for resolution_node_index in resolution:
+                # Pylint currently has a problem with dataclasses
+                # pylint: disable=unexpected-keyword-arg
                 ciphers.append(HPKECiphertext(ephemeral_key=b'0', cipher_text=path_secret))
 
             # todo: SetupBaseI aus HPKE nutzen https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-9.3
             # todo: Path secret verschlüsseln
+            # Pylint currently has a problem with dataclasses
+            # pylint: disable=unexpected-keyword-arg
             nodes_out.append(DirectPathNode(public_key=self._tree.get_node(node_index).get_public_key(),
                                             encrypted_path_secret=ciphers))
 
@@ -169,4 +165,3 @@ class State:
                 private_key = entry.encrypted_path_secret[0]
 
             self._tree.set_node(leaf_index * 2, TreeNode(entry.public_key, private_key, None))
-

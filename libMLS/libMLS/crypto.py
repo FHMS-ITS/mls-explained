@@ -3,12 +3,14 @@ todo: Helper klassen sind böse
 """
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
-
-from libMLS.libMLS.cipher_suite import CipherSuite
-from libMLS.libMLS.state import GroupContext
 from cryptography.hazmat.primitives.kdf.hkdf import HKDFExpand
 
+from libMLS.libMLS.cipher_suite import CipherSuite
+from libMLS.libMLS.group_context import GroupContext
 
+
+# todo: use arguments
+# pylint: disable=unused-argument
 def hkdf_expand_label(secret: bytes, label: bytes, context: GroupContext, length: int,
                       cipher_suite: CipherSuite) -> bytes:
     """

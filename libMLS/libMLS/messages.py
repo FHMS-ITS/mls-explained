@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from struct import pack
 
 from enum import Enum
-from typing import Union, List, Optional
+from typing import Union, List
 
 from libMLS.libMLS.tree_node import TreeNode
 
@@ -48,7 +48,12 @@ class AbstractMessage:
 
 
 class InitMessage(AbstractMessage):
-    pass
+
+    def validate(self) -> bool:
+        return False
+
+    def _pack(self) -> bytes:
+        pass
 
 
 @dataclass
@@ -67,7 +72,7 @@ class AddMessage(AbstractMessage):
 @dataclass
 class DirectPathNode(AbstractMessage):
     public_key: bytes
-    encrypted_path_secret: Optional[List['HPKECiphertext']]
+    encrypted_path_secret: List['HPKECiphertext']
 
     def _pack(self) -> bytes:
         pass
@@ -89,7 +94,12 @@ class UpdateMessage(AbstractMessage):
 
 
 class RemoveMessage(AbstractMessage):
-    pass
+
+    def validate(self) -> bool:
+        return False
+
+    def _pack(self) -> bytes:
+        pass
 
 
 class GroupOperation(AbstractMessage):
@@ -123,6 +133,9 @@ class MLSPlaintextHandshake(AbstractMessage):
 
 class MLSPlaintextApplicationData(AbstractMessage):
     application_data: bytes
+
+    def validate(self) -> bool:
+        return False
 
     def _pack(self) -> bytes:
         pass
@@ -184,8 +197,7 @@ class WelcomeInfoMessage(AbstractMessage):
                 self.init_secret == other.init_secret and
                 self.key == other.key and
                 self.nounce == other.nounce and
-                len(self.tree) == len(other.tree)
-        ):
+                len(self.tree) == len(other.tree)):
             return False
 
         nodes_equal: bool = True
@@ -214,6 +226,8 @@ class WelcomeInfoMessage(AbstractMessage):
             self.nounce
         )
 
+    # todo: Remove this disable as soon as this is implemented
+    # pylint: disable=R0201
     def _packed_nodes(self) -> bytes:
         return b''
 

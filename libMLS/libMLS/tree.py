@@ -18,18 +18,18 @@ class Tree:
         if not isinstance(other, Tree):
             return False
 
-        if len(other._nodes) != len(self._nodes):
+        if other.get_num_nodes() != len(self._nodes):
             return False
 
         # a tree is equal to another tree, if each node ist equal
         for node_index in range(len(self._nodes)):
-            if self._nodes[node_index] != other._nodes[node_index]:
+            if self._nodes[node_index] != other.get_node(node_index):
                 return False
 
         return True
 
     def get_num_leaves(self) -> int:
-        if len(self._nodes) == 0:
+        if not self._nodes:
             return 0
 
         return int(ceil(len(self._nodes) / 2))
@@ -62,8 +62,9 @@ class Tree:
         if leaf_index is None:
             leaf_index = self.get_num_leaves()
 
-        node_index = leaf_index*2
-        for i in range(node_index-self.get_num_nodes()):
+        node_index = leaf_index * 2
+        # pylint: disable=unused-variable
+        for i in range(node_index - self.get_num_nodes()):
             self._nodes.append(None)
 
         self._nodes.append(node)

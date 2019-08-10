@@ -33,4 +33,4 @@ class TreeNode:
         #        self._public_key == other._public_key and \
         #        self._credential == other._credential
 
-        return self._public_key == other._public_key
+        return self._public_key == other.get_public_key()

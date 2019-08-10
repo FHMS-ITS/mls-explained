@@ -3,12 +3,12 @@
 from typing import List
 
 
-def log2(x):
-    if x == 0:
+def log2(number: int):
+    if number == 0:
         return 0
 
     k = 0
-    while (x >> k) > 0:
+    while (number >> k) > 0:
         k += 1
     return k - 1
 
@@ -39,17 +39,17 @@ def node_width(num_leaves: int):
     return 2 * (num_leaves - 1) + 1
 
 
-def root(num_leaves: int):
+def root(num_leaves: int) -> int:
     """
     The index of the root node of a tree with n leaves
     :param num_leaves:
     :return:
     """
-    w = node_width(num_leaves)
-    return (1 << log2(w)) - 1
+    width = node_width(num_leaves)
+    return (1 << log2(width)) - 1
 
 
-def left(node_index: int):
+def left(node_index: int) -> int:
     """
     The left child of an intermediate node.  Note that because the
     tree is left-balanced, there is no dependency on the size of the
@@ -57,30 +57,30 @@ def left(node_index: int):
     :param node_index:
     :return:
     """
-    k = level(node_index)
-    if k == 0:
+    node_level = level(node_index)
+    if node_level == 0:
         return node_index
 
-    return node_index ^ (0x01 << (k - 1))
+    return node_index ^ (0x01 << (node_level - 1))
 
 
-def right(node_index: int, num_leaves: int):
+def right(node_index: int, num_leaves: int) -> int:
     """
     The right child of an intermediate node.  Depends on the size of
     the tree because the straightforward calculation can take you
     beyond the edge of the tree.  The child of a leaf node is itself.
-    :param node_index: 
-    :param num_leaves: 
-    :return: 
+    :param node_index:
+    :param num_leaves:
+    :return:
     """
-    k = level(node_index)
-    if k == 0:
+    node_level = level(node_index)
+    if node_level == 0:
         return node_index
 
-    r = node_index ^ (0x03 << (k - 1))
-    while r >= node_width(num_leaves):
-        r = left(r)
-    return r
+    right_index = node_index ^ (0x03 << (node_level - 1))
+    while right_index >= node_width(num_leaves):
+        right_index = left(right_index)
+    return right_index
 
 
 def parent_step(node_index: int):
@@ -90,9 +90,10 @@ def parent_step(node_index: int):
     :param node_index:
     :return:
     """
-    k = level(node_index)
-    b = (node_index >> (k + 1)) & 0x01
-    return (node_index | (1 << k)) ^ (b << (k + 1))
+    node_level = level(node_index)
+    # pylint: disable=invalid-name
+    b = (node_index >> (node_level + 1)) & 0x01
+    return (node_index | (1 << node_level)) ^ (b << (node_level + 1))
 
 
 def parent(node_index: int, num_leaves: int):
@@ -106,10 +107,10 @@ def parent(node_index: int, num_leaves: int):
     if node_index == root(num_leaves):
         return node_index
 
-    p = parent_step(node_index)
-    while p >= node_width(num_leaves):
-        p = parent_step(p)
-    return p
+    parent_index = parent_step(node_index)
+    while parent_index >= node_width(num_leaves):
+        parent_index = parent_step(parent_index)
+    return parent_index
 
 
 def sibling(node_index: int, num_leaves: int):
@@ -119,13 +120,13 @@ def sibling(node_index: int, num_leaves: int):
     :param num_leaves:
     :return:
     """
-    p = parent(node_index, num_leaves)
-    if node_index < p:
-        return right(p, num_leaves)
-    elif node_index > p:
-        return left(p)
+    parent_index = parent(node_index, num_leaves)
+    if node_index < parent_index:
+        return right(parent_index, num_leaves)
+    if node_index > parent_index:
+        return left(parent_index)
 
-    return p
+    return parent_index
 
 
 def direct_path(node_index: int, num_leaves: int) -> List[int]:
@@ -136,13 +137,13 @@ def direct_path(node_index: int, num_leaves: int) -> List[int]:
     :param num_leaves:
     :return:
     """
-    d = []
-    p = parent(node_index, num_leaves)
-    r = root(num_leaves)
-    while p != r:
-        d.append(p)
-        p = parent(p, num_leaves)
-    return d
+    path = []
+    parent_index = parent(node_index, num_leaves)
+    root_index = root(num_leaves)
+    while parent_index != root_index:
+        path.append(parent_index)
+        parent_index = parent(parent_index, num_leaves)
+    return path
 
 
 def copath(nodex_index, num_leaves):
@@ -153,11 +154,11 @@ def copath(nodex_index, num_leaves):
     :param num_leaves:
     :return:
     """
-    d = direct_path(nodex_index, num_leaves)
+    path = direct_path(nodex_index, num_leaves)
     if nodex_index != sibling(nodex_index, num_leaves):
-        d.append(nodex_index)
+        path.append(nodex_index)
 
-    return [sibling(y, num_leaves) for y in d]
+    return [sibling(y, num_leaves) for y in path]
 
 
 def frontier(num_leaves: int):
@@ -170,10 +171,12 @@ def frontier(num_leaves: int):
     :param num_leaves:
     :return:
     """
+    # pylint: disable=invalid-name
     st = [1 << k for k in range(log2(num_leaves) + 1) if num_leaves & (1 << k) != 0]
     st = reversed(st)
 
     base = 0
+    # pylint: disable=invalid-name
     f = []
     for size in st:
         f.append(root(size) + base)
@@ -205,6 +208,6 @@ def resolve(tree: List, node_index: int, num_leaves: int) -> List[int]:
 
     if level(node_index) == 0:
         return []
-    L = resolve(tree, left(node_index), num_leaves)
-    R = resolve(tree, right(node_index, num_leaves), num_leaves)
-    return L + R
+    left_nodes = resolve(tree, left(node_index), num_leaves)
+    right_nodes = resolve(tree, right(node_index, num_leaves), num_leaves)
+    return left_nodes + right_nodes

@@ -1,5 +1,5 @@
-from cryptography.hazmat.primitives.hashes import Hash
 from typing import Tuple
+from cryptography.hazmat.primitives.hashes import Hash
 
 
 class CipherSuite:
@@ -7,6 +7,8 @@ class CipherSuite:
     def __init__(self):
         return
 
+    # we are cool with iv as an parametername
+    # pylint: disable=invalid-name
     def get_encryption_algorithm(self, key: bytes, iv: bytes = bytes.fromhex('4fc8604d3aacc9ae5c3158e4c7e4d74e')):
         raise NotImplementedError()
 
