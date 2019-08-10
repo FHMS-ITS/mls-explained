@@ -22,3 +22,11 @@ def test_add_node_blanks_path():
 
     tree.add_leaf(TreeNode(b'publicC', None, b'C'))
     assert tree.get_node(3) is None
+
+
+def test_get_leaf_count():
+    tree: Tree = Tree()
+
+    for should_be in range(11):
+        assert tree.get_num_leaves() == should_be
+        tree.add_leaf(TreeNode(b'public', None, b'node'))

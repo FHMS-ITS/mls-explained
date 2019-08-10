@@ -39,13 +39,13 @@ def node_width(num_leaves: int):
     return 2 * (num_leaves - 1) + 1
 
 
-def root(num_leaves: int) -> int:
+def root(num_nodes: int) -> int:
     """
     The index of the root node of a tree with n leaves
-    :param num_leaves:
+    :param num_nodes:
     :return:
     """
-    width = node_width(num_leaves)
+    width = node_width(num_nodes)
     return (1 << log2(width)) - 1
 
 
@@ -96,53 +96,53 @@ def parent_step(node_index: int):
     return (node_index | (1 << node_level)) ^ (b << (node_level + 1))
 
 
-def parent(node_index: int, num_leaves: int):
+def parent(node_index: int, num_nodes: int):
     """
     The parent of a node.  As with the right child calculation, have
     to walk back until the parent is within the range of the tree.
     :param node_index:
-    :param num_leaves:
+    :param num_nodes:
     :return:
     """
-    if node_index == root(num_leaves):
+    if node_index == root(num_nodes):
         return node_index
 
     parent_index = parent_step(node_index)
-    while parent_index >= node_width(num_leaves):
+    while parent_index >= node_width(num_nodes):
         parent_index = parent_step(parent_index)
     return parent_index
 
 
-def sibling(node_index: int, num_leaves: int):
+def sibling(node_index: int, num_nodes: int):
     """
     The other child of the node's parent.  Root's sibling is itself.
     :param node_index:
-    :param num_leaves:
+    :param num_nodes:
     :return:
     """
-    parent_index = parent(node_index, num_leaves)
+    parent_index = parent(node_index, num_nodes)
     if node_index < parent_index:
-        return right(parent_index, num_leaves)
+        return right(parent_index, num_nodes)
     if node_index > parent_index:
         return left(parent_index)
 
     return parent_index
 
 
-def direct_path(node_index: int, num_leaves: int) -> List[int]:
+def direct_path(node_index: int, num_nodes: int) -> List[int]:
     """
     The direct path of a node, ordered from the root
     down, not including the root or the terminal node
     :param node_index:
-    :param num_leaves:
+    :param num_nodes:
     :return:
     """
     path = []
-    parent_index = parent(node_index, num_leaves)
-    root_index = root(num_leaves)
+    parent_index = parent(node_index, num_nodes)
+    root_index = root(num_nodes)
     while parent_index != root_index:
         path.append(parent_index)
-        parent_index = parent(parent_index, num_leaves)
+        parent_index = parent(parent_index, num_nodes)
     return path
 
 

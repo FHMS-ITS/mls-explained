@@ -63,7 +63,7 @@ der [Linter](#Linter) ausgeführt.
 
 Da in diesem Projekt Leute mit sehr diversen Background mitarbeiten, wird ein Linter genutzt 
 um einen gemeinsamen Codestyle zu erreichen, den jeder gut lesen kann. Im Falle der Python-Projekte 
-ist dies `pylint`, für Rust folgt bald noch einer.
+ist dies `pylint`.
 
 #### Python Environments
 Damit IDEs wie Pycharm wissen, was alles installiert ist und um Autocompletion hilfe zu
@@ -88,16 +88,20 @@ Code ausführen solltet ihr am besten nur in der nix-shell des jeweiligen Projek
 │   │   ├── dirserver
 │   │   └── tests
 │   └── tests
-└── libMLS
+├── libMLS
+│   ├── libMLS
+│   └── tests
+└── tests
     
 ```
 
-`libMLS`: Implementierung von MLS in Rust
+`libMLS`: Implementierung von MLS in Python
 
 `infrastructure`: 
 - `authserver`: Implementierung des AS 
 - `dirserver`: Implementierung des Directory Servers
 - `chatclient`: Ein MLS Chat client mit GUI
-- `tests`: Globale (Integration-)Tests für alle Infrastruktur projekte
+
+`tests`: Globale (Integrations-)Tests für alle Projekte
 
 

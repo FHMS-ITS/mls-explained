@@ -2,7 +2,7 @@ from math import ceil
 from typing import List, Optional
 
 from libMLS.libMLS.tree_node import TreeNode
-from .tree_math import parent
+from .tree_math import parent, level
 
 
 class Tree:
@@ -85,3 +85,11 @@ class Tree:
 
             self._nodes[current_index] = None
             last_index = current_index
+
+    def __str__(self):
+
+        out_string: str = 'Tree:\n'
+        for node_index in range(len(self._nodes)):
+            out_string += f'[{node_index}] ' + ('\t' * level(node_index)) + str(self._nodes[node_index]) + '\n'
+
+        return out_string

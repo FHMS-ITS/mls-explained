@@ -34,3 +34,6 @@ class TreeNode:
         #        self._credential == other._credential
 
         return self._public_key == other.get_public_key()
+
+    def __str__(self):
+        return f'Public:{self._public_key.hex()} | Private:{self._private_key.hex() if self._private_key else "None"}'
