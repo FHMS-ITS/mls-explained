@@ -90,9 +90,11 @@ class State:
         # Corresponds to X=path_secret[0]
         path_secret = os.urandom(16)
         # todo: get hash len
-        hash_length = 32
-        node_secret = hkdf_expand_label(secret=path_secret, context=self._context, label=b"node",
-                                        cipher_suite=self._cipher_suite, length=hash_length)
+        node_secret = hkdf_expand_label(secret=path_secret,
+                                        context=self._context,
+                                        label=b"node",
+                                        cipher_suite=self._cipher_suite,
+                                        length=self._cipher_suite.get_hash_length())
 
         self._tree.set_node(node_index=leaf_index * 2, node=TreeNode.from_node_secret(node_secret=node_secret,
                                                                                       cipher_suite=self._cipher_suite))
@@ -105,10 +107,12 @@ class State:
             node_index = parent(conode_index, self._tree.get_num_leaves())
 
             path_secret = hkdf_expand_label(secret=path_secret, context=self._context, label=b"path",
-                                            cipher_suite=self._cipher_suite, length=hash_length)
+                                            cipher_suite=self._cipher_suite,
+                                            length=self._cipher_suite.get_hash_length())
 
             node_secret = hkdf_expand_label(secret=path_secret, context=self._context, label=b"node",
-                                            cipher_suite=self._cipher_suite, length=hash_length)
+                                            cipher_suite=self._cipher_suite,
+                                            length=self._cipher_suite.get_hash_length())
 
             self._tree.set_node(node_index=node_index,
                                 node=TreeNode.from_node_secret(node_secret=node_secret,
@@ -163,10 +167,9 @@ class State:
                 # todo: decrypt secret here, as soon as it is encrypted
                 path_secret: Optional[bytes] = entry.encrypted_path_secret[0].cipher_text
 
-                # todo: get hash len
-                hash_length = 32
                 node_secret = hkdf_expand_label(secret=path_secret, context=self._context, label=b"node",
-                                                cipher_suite=self._cipher_suite, length=hash_length)
+                                                cipher_suite=self._cipher_suite,
+                                                length=self._cipher_suite.get_hash_length())
 
                 computed_node = TreeNode.from_node_secret(
                     node_secret=node_secret,
@@ -174,7 +177,6 @@ class State:
 
                 if computed_node.get_public_key() != entry.public_key:
                     raise RuntimeError()
-
 
                 break
 

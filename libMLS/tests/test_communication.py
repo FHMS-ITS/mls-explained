@@ -76,8 +76,7 @@ def test_update_message():
     alice_session.process_add(add_message=add)
     bob_session.process_add(add_message=add)
 
-    # todo: Leaf_index an der session speichern
-    update: UpdateMessage = alice_session.update(0)
+    update: UpdateMessage = alice_session.update()
 
     # assert that this update contains two nodes: The leaf and the root node
     assert len(update.direct_path) == 2

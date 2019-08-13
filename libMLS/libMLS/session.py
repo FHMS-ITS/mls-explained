@@ -1,4 +1,5 @@
 import string
+from typing import Optional
 
 from libMLS.libMLS.local_key_store_mock import LocalKeyStoreMock
 from libMLS.libMLS.messages import WelcomeInfoMessage, AddMessage, UpdateMessage
@@ -9,10 +10,11 @@ from libMLS.libMLS.x25519_cipher_suite import X25519CipherSuite
 
 class Session:
 
-    def __init__(self, state: State, key_store: LocalKeyStoreMock, user_name: string):
+    def __init__(self, state: State, key_store: LocalKeyStoreMock, user_name: string, user_index: Optional[int]):
         self._state: State = state
         self._key_store = key_store
         self._user_name = user_name
+        self._user_index: Optional[int] = user_index
 
     @classmethod
     def from_welcome(cls, welcome: WelcomeInfoMessage, key_store: LocalKeyStoreMock, user_name: string) -> 'Session':
@@ -25,7 +27,7 @@ class Session:
         )
 
         state = State.from_existing(cipher_suite=X25519CipherSuite(), context=context, nodes=welcome.tree)
-        return cls(state, key_store, user_name)
+        return cls(state, key_store, user_name, user_index=None)
 
     # todo: Use user_credentials
     @classmethod
@@ -46,7 +48,7 @@ class Session:
             leaf_public=public_key,
             leaf_secret=key_store.get_private_key(public_key))
 
-        return cls(state, key_store, user_name)
+        return cls(state, key_store, user_name, user_index=0)
 
     def get_state(self) -> State:
         return self._state
@@ -78,16 +80,24 @@ class Session:
 
         private_key = self._key_store.get_private_key(add_message.init_key)
 
+        if private_key is not None:
+            # we possess the private key for this given init_key
+            if self._user_index is not None:
+                # if we are not new to the group ( i.e. already know our index), this cant be right
+                raise RuntimeError()
+            self._user_index = add_message.index
+
         self._state.process_add(add_message=add_message, private_key=private_key)
 
-    def update(self, leaf_index: int) -> UpdateMessage:
+    def update(self) -> UpdateMessage:
         # TODO: ACTHUNG ACHTUNG RESEQUENCING
         # DIESE METHODE IST NICHT RESEQUENCING SICHER
         # Gegensätzlich zum RFC müssten wir auch das leaf secret mit versenden, damit wir im resequencing fall
         # nicht unseren tree borken. Gerade erstzen wir das leaf secret sofort, wenn die update nachricht dann
         # resequenced wird ist der updatende client raus. MLSpp von cisco hat das gleiche problem.
 
-        return self._state.update(leaf_index)
+        return self._state.update(self._user_index)
 
     def process_update(self, leaf_index: int, update_message: UpdateMessage) -> None:
+        # todo: We still do not know which leaf to update with this add message
         self._state.process_update(leaf_index=leaf_index, message=update_message)

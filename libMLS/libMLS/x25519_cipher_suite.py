@@ -45,6 +45,9 @@ class X25519CipherSuite(CipherSuite):
         # see https://cryptography.io/en/latest/hazmat/primitives/cryptographic-hashes/?highlight=SHA
         return Hash(hashes.SHA256(), default_backend())
 
+    def get_hash_length(self) -> int:
+        return hashes.SHA256().digest_size
+
     def get_curve(self):
         # see https://cryptography.io/en/latest/hazmat/primitives/asymmetric/x25519/?highlight=X25519
         pass

@@ -15,6 +15,9 @@ class CipherSuite:
     def get_hash(self) -> Hash:
         raise NotImplementedError()
 
+    def get_hash_length(self) -> int:
+        raise NotImplementedError
+
     def get_curve(self):
         raise NotImplementedError()
 
