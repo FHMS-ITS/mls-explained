@@ -1,13 +1,19 @@
-with (import <nixpkgs> {});
+let
+    pkgs = import <nixpkgs>{};
 
-rustPlatform.buildRustPackage rec {
-  name = "MLS";
+    overriddenCryptography = pkgs.python37Packages.cryptography.override {
+        openssl= pkgs.openssl_1_1;
+    };
+    nativePythonPackages = with pkgs.python37Packages; [flask];
+    customPythonPackages =  [ overriddenCryptography ];
+    output = import ../buildPythonAppAndEnv.nix rec {
+        inherit pkgs;
+        pname = "libMLS";
+        version = "0.1";
 
-  buildInputs = [ python36 ];
-  
-  system = builtins.currentSystem;
-  src = ./.;
+        src = ./.;
 
-  cargoSha256 = "0ad3kk48fx15rs16c4mnh0dkaj25qjwbkjacv8jfnka0iq29ys5j";
-}
-
+        propagatedBuildInputs = builtins.concatLists [ nativePythonPackages customPythonPackages ];
+        checkInputs = with pkgs.python37Packages; [ pytest pylint pytestcov ];
+    };
+in output

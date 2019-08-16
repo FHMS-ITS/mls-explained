@@ -7,5 +7,4 @@ before_script:
 build_infrastructure:
   stage: build
   script:
-    - cd infrastructure
     - nix-build default.nix
