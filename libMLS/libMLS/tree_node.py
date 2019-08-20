@@ -1,6 +1,27 @@
 from typing import Optional
 
+from dataclasses import dataclass
 from libMLS.libMLS.cipher_suite import CipherSuite
+
+
+@dataclass
+class LeafNodeInfo:
+    public_key: bytes
+    credential: bytes
+
+
+@dataclass
+class LeafNodeHashInput:
+    info: Optional[LeafNodeInfo]
+    hash_type: int = 0
+
+
+@dataclass
+class ParentNodeHashInput:
+    public_key: Optional[bytes]
+    left_hash: bytes
+    right_hash: bytes
+    hash_type: int = 1
 
 
 class TreeNode:
@@ -16,6 +37,9 @@ class TreeNode:
 
     def get_private_key(self) -> Optional[bytes]:
         return self._private_key
+
+    def get_credential(self) -> Optional[bytes]:
+        return self._credential
 
     def has_private_key(self) -> bool:
         return self._private_key is not None

@@ -193,6 +193,19 @@ def leaves(num_nodes: int):
     return [2 * i for i in range(num_nodes)]
 
 
+def number_of_leaves(num_nodes: int):
+    return len(list(range(0, num_nodes, 2)))
+
+
+def is_leaf(node_index: int):
+    """
+    Checks if given node is a leaf
+    :param node_index:
+    :return:
+    """
+    return node_index % 2 == 0
+
+
 def resolve(tree: List, node_index: int, num_leaves: int) -> List[int]:
     """
     The resolution of a node is the collection of non-blank
