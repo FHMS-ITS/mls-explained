@@ -193,10 +193,6 @@ def leaves(num_nodes: int):
     return [2 * i for i in range(num_nodes)]
 
 
-def number_of_leaves(num_nodes: int):
-    return len(list(range(0, num_nodes, 2)))
-
-
 def is_leaf(node_index: int):
     """
     Checks if given node is a leaf

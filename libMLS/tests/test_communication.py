@@ -1,7 +1,7 @@
 from libMLS.libMLS.local_key_store_mock import LocalKeyStoreMock
 from libMLS.libMLS.messages import UpdateMessage
 from libMLS.libMLS.session import Session
-from libMLS.libMLS.x25519_cipher_suite import X25519CipherSuite
+
 
 def test_key_store_mock_works():
     alice_store = LocalKeyStoreMock('alice')
@@ -59,6 +59,7 @@ def test_session_can_be_created_from_welcome():
     assert bob_state.get_tree().get_num_nodes() == 3 and bob_state.get_tree().get_num_leaves() == 2
     assert alice_state.get_tree() == bob_state.get_tree()
 
+
 def test_update_message():
     # init user keys
     alice_store = LocalKeyStoreMock('alice')
@@ -100,5 +101,4 @@ def test_update_message():
     assert bob_tree.get_node(0).get_private_key() is None
 
     # compare tree hashses
-    cipher = X25519CipherSuite()
-    assert alice_tree.get_tree_hash(cipher) == bob_tree.get_tree_hash(cipher)
+    assert alice_tree.get_tree_hash() == bob_tree.get_tree_hash()

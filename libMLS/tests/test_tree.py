@@ -30,3 +30,64 @@ def test_get_leaf_count():
     for should_be in range(11):
         assert tree.get_num_leaves() == should_be
         tree.add_leaf(TreeNode(b'public', None, b'node'))
+
+
+def test_get_hash_one_node():
+    tree: Tree = Tree()
+
+    assert tree.get_num_nodes() == 0
+    tree.add_leaf(TreeNode(b'public', None, b'A'))
+
+    assert tree.get_num_nodes() == 1
+    assert tree.get_num_leaves() == 1
+
+    assert tree.get_tree_hash() == \
+           b'\xa7^V&\xc2\x80\xcdW\x9dfB\xc4\xb0\t\xd8\xc0\xc9\x87s\n\xb4\xd97\xf7$:\x83\xa1\xe7=\xcb\\'
+
+
+def test_tree_hash_changes_when_adding_nodes():
+    tree: Tree = Tree()
+
+    assert tree.get_num_nodes() == 0
+    tree.add_leaf(TreeNode(b'public', None, b'A'))
+
+    assert tree.get_num_nodes() == 1
+    assert tree.get_num_leaves() == 1
+
+    assert tree.get_tree_hash() == \
+           b'\xa7^V&\xc2\x80\xcdW\x9dfB\xc4\xb0\t\xd8\xc0\xc9\x87s\n\xb4\xd97\xf7$:\x83\xa1\xe7=\xcb\\'
+
+    tree.add_leaf(TreeNode(b'public', None, b'B'))
+    assert tree.get_tree_hash() == \
+           b'\xdb"\xb4H\x94\x10\xff\x17gY\x0c\n\xa2!\xeb\x10BT^\x97\x0b\x0bcfJ\xc9\xb0-\x98\xfe\xd2\x90'
+
+    tree.add_leaf(TreeNode(b'public', None, b'C'))
+    assert tree.get_tree_hash() == \
+           b'.\xe2\xa3\x865\xdd\xc87\xf1xk/\x88VK)\x03\xc0\\\xda\x1ey_\\2\xd3y\xd2\xae\xdb\xc7Y'
+
+
+def test_trees_have_different_hashes_when_content_different():
+    tree1: Tree = Tree()
+    tree2: Tree = Tree()
+
+    tree1.add_leaf(TreeNode(b'public', None, b'A'))
+    tree2.add_leaf(TreeNode(b'public_key', None, b'A'))
+
+    assert tree1.get_tree_hash() != tree2.get_tree_hash()
+
+    tree1.add_leaf(TreeNode(b'public', None, b'B'))
+    tree2.add_leaf(TreeNode(b'public', None, b'B'))
+
+    assert tree1.get_tree_hash() != tree2.get_tree_hash()
+
+
+def test_tree_hash_with_blank_leaf():
+    tree: Tree = Tree()
+
+    assert tree.get_num_nodes() == 0
+
+    tree.add_leaf(TreeNode(b'publicA', None, b'A'))
+    tree.add_leaf(None)
+
+    assert tree.get_tree_hash() == \
+           b'O4X\x84\xf4\xda\xed/\x94\xfd\x1e\xb9\xe5\xea\xf2?\xcd\x8a\x10\x1b~_\xf6L\xff\xa7\xf2\xbe%\x1d\xd9\xe1'

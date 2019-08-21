@@ -7,14 +7,22 @@ from libMLS.libMLS.cipher_suite import CipherSuite
 @dataclass
 class LeafNodeInfo:
     public_key: bytes
-    credential: bytes
+    credentials: bytes
 
+    def __bytes__(self):
+        if self.credentials:
+            return b"".join([self.public_key, self.credentials])
+        return self.public_key
 
 @dataclass
 class LeafNodeHashInput:
     info: Optional[LeafNodeInfo]
     hash_type: int = 0
 
+    def __bytes__(self):
+        if self.info:
+            return b"".join([bytes([self.hash_type]), self.info.__bytes__()])
+        return bytes([self.hash_type])
 
 @dataclass
 class ParentNodeHashInput:
@@ -23,14 +31,21 @@ class ParentNodeHashInput:
     right_hash: bytes
     hash_type: int = 1
 
+    def __bytes__(self):
+        tmp = b"".join([bytes([self.hash_type]), self.left_hash])
+        tmp = b"".join([tmp, self.right_hash])
+        if self.public_key:
+            tmp = b"".join([tmp, self.public_key])
+        return tmp
+
 
 class TreeNode:
 
-    def __init__(self, public_key: bytes, private_key: Optional[bytes] = None, credential: Optional[bytes] = None):
+    def __init__(self, public_key: bytes, private_key: Optional[bytes] = None, credentials: Optional[bytes] = None):
         super().__init__()
         self._public_key: bytes = public_key
         self._private_key: Optional[bytes] = private_key
-        self._credential: Optional[bytes] = credential
+        self._credentials: Optional[bytes] = credentials
 
     def get_public_key(self) -> bytes:
         return self._public_key
@@ -38,8 +53,8 @@ class TreeNode:
     def get_private_key(self) -> Optional[bytes]:
         return self._private_key
 
-    def get_credential(self) -> Optional[bytes]:
-        return self._credential
+    def get_credentials(self) -> Optional[bytes]:
+        return self._credentials
 
     def has_private_key(self) -> bool:
         return self._private_key is not None
