@@ -5,7 +5,7 @@ from typing import List, Dict
 import pytest
 
 from libMLS.libMLS.message_packer import pack_dynamic, MESSAGE_PACKER_LENGTH_FIELD_SIZE, DynamicPackingException, \
-    unpack_dynamic
+    unpack_dynamic, unpack_byte_list, MESSAGE_PACKER_BYTE_ORDERING
 
 
 def test_plain_vector():
@@ -37,7 +37,9 @@ def test_combined_payloads():
     cases: Dict[string, List] = {
         'Vc': [dyn_payload, b'a'],
         'LLV': [1337, 7331, dyn_payload],
-        '2LV': [1337, 7331, dyn_payload]
+        '2LV': [1337, 7331, dyn_payload],
+        '32sV': [b'a' * 32, dyn_payload],
+
     }
 
     for fmt_string, arguments in cases.items():
@@ -46,6 +48,20 @@ def test_combined_payloads():
         expected_size = plain_size + MESSAGE_PACKER_LENGTH_FIELD_SIZE + len(dyn_payload)
 
         assert expected_size == len(pack_dynamic(fmt_string, *arguments))
+
+
+def test_stacked_payloads():
+    payload = b'' + pack_dynamic('V', b'a' * 32) + pack_dynamic('V', b'b' * 64)
+
+    payload_payload = pack_dynamic('V', payload)
+
+    unpacked_payload = unpack_dynamic('V', payload_payload)[0]
+    assert payload == unpacked_payload
+
+    payload_list = unpack_byte_list(unpacked_payload)
+    assert len(payload_list) == 2
+    assert payload_list[0] == b'a' * 32
+    assert payload_list[1] == b'b' * 64
 
 
 def test_quantifier_untouched():
@@ -61,7 +77,8 @@ def test_pack_unpack_combinations():
         'V': [dyn_payload],
         'Vc': [dyn_payload, b'a'],
         'LLV': [1337, 7331, dyn_payload],
-        'LVL': [1337, b'b' * 16, 7331]
+        'LVL': [1337, b'b' * 16, 7331],
+        '32sV': [b'a' * 32, pack_dynamic('V', b'a' * 72)]
     }
 
     for fmt_string, arguments in cases.items():
@@ -72,8 +89,14 @@ def test_pack_unpack_combinations():
 
 
 def test_empty_vector():
-    pytest.skip('We must check whether this should be allowed')
-    pack_dynamic('V', b'')
+    packed = pack_dynamic('V', b'')
+    assert len(packed) == struct.calcsize('L')
+    assert struct.unpack(MESSAGE_PACKER_BYTE_ORDERING + 'L', packed)[0] == 0
+
+    unpacked = unpack_dynamic('V', packed)
+    assert len(unpacked) == 1
+    assert isinstance(unpacked[0], bytes)
+    assert unpacked[0] == b''
 
 
 def test_non_binary_must_fail():

@@ -7,6 +7,7 @@ from struct import pack
 from enum import Enum
 from typing import Union, List
 
+from libMLS.libMLS.message_packer import pack_dynamic, unpack_dynamic, unpack_byte_list
 from libMLS.libMLS.tree_node import TreeNode
 
 
@@ -33,6 +34,10 @@ class AbstractMessage:
     def __init__(self):
         return
 
+    @classmethod
+    def from_bytes(cls, data: bytes):
+        raise NotImplementedError()
+
     def pack(self) -> bytes:
         if not self.validate():
             raise RuntimeError(f'Validation failed for a message of type \"{self.__class__.__name__}\"')
@@ -55,6 +60,10 @@ class InitMessage(AbstractMessage):
     def _pack(self) -> bytes:
         pass
 
+    @classmethod
+    def from_bytes(cls, data: bytes):
+        pass
+
 
 @dataclass
 class AddMessage(AbstractMessage):
@@ -68,6 +77,10 @@ class AddMessage(AbstractMessage):
     def validate(self) -> bool:
         return False
 
+    @classmethod
+    def from_bytes(cls, data: bytes):
+        pass
+
 
 @dataclass
 class DirectPathNode(AbstractMessage):
@@ -75,22 +88,89 @@ class DirectPathNode(AbstractMessage):
     encrypted_path_secret: List['HPKECiphertext']
 
     def _pack(self) -> bytes:
-        pass
+
+        path_secret_buffer: bytes = b''
+        for entry in self.encrypted_path_secret:
+            path_secret_buffer += pack_dynamic('V', entry.pack())
+
+        return pack_dynamic('32sV', self.public_key, path_secret_buffer)
+
+    @classmethod
+    def from_bytes(cls, data: bytes):
+        box: tuple = unpack_dynamic('32sV', data)
+
+        public_key: bytes = box[0]
+        encrypted_messages_bytes: List[bytes] = unpack_byte_list(box[1])
+        encrypted_messages: List[HPKECiphertext] = []
+        for entry in encrypted_messages_bytes:
+            encrypted_messages.append(HPKECiphertext.from_bytes(entry))
+
+        # pylint: disable=unexpected-keyword-arg
+        inst: DirectPathNode = cls(public_key=public_key, encrypted_path_secret=encrypted_messages)
+        if not inst.validate():
+            raise RuntimeError()
+
+        return inst
 
     def validate(self) -> bool:
-        return False
+        return True
+
+    def __eq__(self, other):
+
+        if not isinstance(other, self.__class__):
+            return False
+
+        if self.public_key != other.public_key:
+            return False
+
+        for index, node in enumerate(self.encrypted_path_secret):
+            if node != other.encrypted_path_secret[index]:
+                return False
+
+        return True
 
 
 @dataclass
 class UpdateMessage(AbstractMessage):
-
     direct_path: List[DirectPathNode]
 
     def _pack(self) -> bytes:
-        pass
+
+        nodes_buffer: bytes = b''
+        for node in self.direct_path:
+            nodes_buffer += pack_dynamic('V', node.pack())
+
+        return pack_dynamic('V', nodes_buffer)
+
+    @classmethod
+    def from_bytes(cls, data: bytes):
+        node_bytes: List[bytes] = unpack_byte_list(unpack_dynamic('V', data)[0])
+
+        direct_path: List[DirectPathNode] = []
+        for entry in node_bytes:
+            direct_path.append(DirectPathNode.from_bytes(entry))
+
+        # pylint: disable=unexpected-keyword-arg
+        inst: UpdateMessage = cls(direct_path=direct_path)
+
+        if not inst.validate():
+            raise RuntimeError()
+
+        return inst
 
     def validate(self) -> bool:
-        pass
+        return True
+
+    def __eq__(self, other):
+
+        if not isinstance(other, self.__class__):
+            return False
+
+        for index, node in enumerate(self.direct_path):
+            if node != other.direct_path[index]:
+                return False
+
+        return True
 
 
 class RemoveMessage(AbstractMessage):
@@ -99,6 +179,10 @@ class RemoveMessage(AbstractMessage):
         return False
 
     def _pack(self) -> bytes:
+        pass
+
+    @classmethod
+    def from_bytes(cls, data: bytes):
         pass
 
 
@@ -115,6 +199,10 @@ class GroupOperation(AbstractMessage):
                     self.operation.pack()
                     )
 
+    @classmethod
+    def from_bytes(cls, data: bytes):
+        pass
+
 
 class MLSPlaintextHandshake(AbstractMessage):
     confirmation: int
@@ -130,6 +218,10 @@ class MLSPlaintextHandshake(AbstractMessage):
             self.confirmation,
         )
 
+    @classmethod
+    def from_bytes(cls, data: bytes):
+        pass
+
 
 class MLSPlaintextApplicationData(AbstractMessage):
     application_data: bytes
@@ -138,6 +230,10 @@ class MLSPlaintextApplicationData(AbstractMessage):
         return False
 
     def _pack(self) -> bytes:
+        pass
+
+    @classmethod
+    def from_bytes(cls, data: bytes):
         pass
 
 
@@ -163,6 +259,10 @@ class MLSPlaintext(AbstractMessage):
             self.signature
         )
 
+    @classmethod
+    def from_bytes(cls, data: bytes):
+        pass
+
 
 @dataclass
 class HPKECiphertext(AbstractMessage):
@@ -170,10 +270,28 @@ class HPKECiphertext(AbstractMessage):
     cipher_text: bytes
 
     def _pack(self) -> bytes:
-        return pack('pp', self.ephemeral_key, self.cipher_text)
+        return pack_dynamic('32sV', self.ephemeral_key, self.cipher_text)
 
     def validate(self) -> bool:
-        return len(self.ephemeral_key) < 2 ** 16 and len(self.cipher_text) < 2 ** 16
+        return True
+
+    @classmethod
+    def from_bytes(cls, data: bytes):
+        box: tuple = unpack_dynamic('32sV', data)
+        # pylint: disable=unexpected-keyword-arg
+        inst: HPKECiphertext = cls(ephemeral_key=box[0], cipher_text=box[1])
+
+        if not inst.validate():
+            raise RuntimeError()
+
+        return inst
+
+    def __eq__(self, other):
+
+        if not isinstance(other, self.__class__):
+            return False
+
+        return self.ephemeral_key == other.ephemeral_key and self.cipher_text == other.cipher_text
 
 
 class WelcomeInfoMessage(AbstractMessage):
@@ -242,6 +360,10 @@ class WelcomeInfoMessage(AbstractMessage):
                len(self.key) < 256 and \
                len(self.nounce) < 256
 
+    @classmethod
+    def from_bytes(cls, data: bytes):
+        pass
+
 
 class WelcomeMessage(AbstractMessage):
     client_init_key_id: bytes
@@ -258,3 +380,7 @@ class WelcomeMessage(AbstractMessage):
 
     def validate(self) -> bool:
         return len(self.client_init_key_id) <= 256
+
+    @classmethod
+    def from_bytes(cls, data: bytes):
+        pass

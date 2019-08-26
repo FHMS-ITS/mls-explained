@@ -5,6 +5,7 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives.hashes import Hash
+from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
 from libMLS.libMLS.cipher_suite import CipherSuite
 
@@ -57,7 +58,10 @@ class X25519CipherSuite(CipherSuite):
         digest.update(material)
         private_key: bytes = digest.finalize()
 
-        #todo: Public key is mostlikely wrong, quote "The corresponding public key is X25519(SHA-256(X), 9)"
-        public_key = X25519PrivateKey.from_private_bytes(private_key).public_key().public_bytes()
+        # todo: Public key is mostlikely wrong, quote "The corresponding public key is X25519(SHA-256(X), 9)"
+        public_key = X25519PrivateKey.\
+            from_private_bytes(private_key).\
+            public_key().\
+            public_bytes(encoding=Encoding.Raw, format=PublicFormat.Raw)
 
         return public_key, private_key
