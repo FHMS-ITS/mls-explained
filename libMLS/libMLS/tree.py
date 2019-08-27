@@ -31,6 +31,16 @@ class Tree:
 
         return True
 
+    def deep_eq(self, other) -> bool:
+        if not self == other:
+            return False
+
+        for node, index in self._nodes:
+            if not node.deep_eq(other.get_node(index)):
+                return False
+
+        return True
+
     def get_num_leaves(self) -> int:
         if not self._nodes:
             return 0

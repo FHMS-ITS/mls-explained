@@ -7,6 +7,7 @@ from struct import pack
 from enum import Enum
 from typing import Union, List
 
+from libMLS.libMLS.abstract_message import AbstractMessage
 from libMLS.libMLS.message_packer import pack_dynamic, unpack_dynamic, unpack_byte_list
 from libMLS.libMLS.tree_node import TreeNode
 
@@ -29,29 +30,6 @@ class CipherSuiteType(Enum):
     X25519_SHA256_AES128GCM = 1
 
 
-class AbstractMessage:
-
-    def __init__(self):
-        return
-
-    @classmethod
-    def from_bytes(cls, data: bytes):
-        raise NotImplementedError()
-
-    def pack(self) -> bytes:
-        if not self.validate():
-            raise RuntimeError(f'Validation failed for a message of type \"{self.__class__.__name__}\"')
-
-        return self._pack()
-
-    def _pack(self) -> bytes:
-        # see https://docs.python.org/3.7/library/struct.html
-        raise NotImplementedError()
-
-    def validate(self) -> bool:
-        raise NotImplementedError()
-
-
 class InitMessage(AbstractMessage):
 
     def validate(self) -> bool:
@@ -72,14 +50,30 @@ class AddMessage(AbstractMessage):
     welcome_info_hash: bytes
 
     def _pack(self) -> bytes:
-        pass
+        return pack_dynamic('IVV', self.index, self.init_key, self.welcome_info_hash)
 
     def validate(self) -> bool:
-        return False
+        return True
 
     @classmethod
     def from_bytes(cls, data: bytes):
-        pass
+        box: tuple = unpack_dynamic('IVV', data)
+        # pylint: disable=unexpected-keyword-arg
+        inst: AddMessage = cls(index=box[0], init_key=box[1], welcome_info_hash=box[2])
+
+        if not inst.validate():
+            raise RuntimeError()
+
+        return inst
+
+    def __eq__(self, other):
+
+        if not isinstance(other, self.__class__):
+            return False
+
+        return self.index == other.index and \
+               self.init_key == other.init_key and \
+               self.welcome_info_hash == other.welcome_info_hash
 
 
 @dataclass
@@ -294,8 +288,9 @@ class HPKECiphertext(AbstractMessage):
         return self.ephemeral_key == other.ephemeral_key and self.cipher_text == other.cipher_text
 
 
+@dataclass
 class WelcomeInfoMessage(AbstractMessage):
-    protocol_version: int
+    protocol_version: bytes
     group_id: bytes
     epoch: int
     tree: List[TreeNode]
@@ -326,45 +321,59 @@ class WelcomeInfoMessage(AbstractMessage):
         return nodes_equal
 
     def _pack(self) -> bytes:
-        return pack(
-            'BIpIIpIpIpIpIp',
+        return pack_dynamic(
+            'VVIVVVVV',
             self.protocol_version,
-            len(self.group_id),
             self.group_id,
             self.epoch,
-            len(self._packed_nodes()),
             self._packed_nodes(),
-            len(self.interim_transcript_hash),
             self.interim_transcript_hash,
-            len(self.init_secret),
             self.init_secret,
-            len(self.key),
             self.key,
-            len(self.nounce),
             self.nounce
         )
 
-    # todo: Remove this disable as soon as this is implemented
-    # pylint: disable=R0201
     def _packed_nodes(self) -> bytes:
-        return b''
+        # packed_list: List[bytes] = []
+        packed_list: bytes = b''
+        for node in self.tree:
+            packed_list += pack_dynamic('V', node.pack())
+
+        return packed_list
 
     def validate(self) -> bool:
         # todo: write auto validate for fmt string and dump this validation func
-        return self.protocol_version < 256 and \
-               len(self.group_id) < 256 and \
-               self.epoch < 2 ** 32 and \
-               len(self._packed_nodes()) < 2 ** 32 and \
-               len(self.interim_transcript_hash) < 256 and \
-               len(self.init_secret) < 256 and \
-               len(self.key) < 256 and \
-               len(self.nounce) < 256
+        return True
 
     @classmethod
     def from_bytes(cls, data: bytes):
-        pass
+        box = unpack_dynamic('VVIVVVVV', data)
+
+        raw_nodes: List[bytes] = unpack_byte_list(box[3])
+        nodes: List[TreeNode] = []
+
+        # if there are no nodes in the tree, the raw_nodes list contains just one empty entry
+        if raw_nodes != [] and raw_nodes[0] != b'':
+            for raw_node in raw_nodes:
+                nodes.append(TreeNode.from_bytes(raw_node))
+
+        # pylint: disable=unexpected-keyword-arg
+        inst = cls(protocol_version=box[0],
+                   group_id=box[1],
+                   epoch=box[2],
+                   tree=nodes,
+                   interim_transcript_hash=box[4],
+                   init_secret=box[5],
+                   key=box[6],
+                   nounce=box[7])
+
+        if not inst.validate():
+            raise RuntimeError()
+
+        return inst
 
 
+@dataclass
 class WelcomeMessage(AbstractMessage):
     client_init_key_id: bytes
     cipher_suite: CipherSuiteType

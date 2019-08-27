@@ -4,8 +4,8 @@ import struct
 from struct import unpack_from
 from typing import List
 
-MESSAGE_PACKER_LENGTH_FIELD_SIZE: int = struct.calcsize('L')
-MESSAGE_PACKER_BYTE_ORDERING: str = '@'
+MP_BYTE_ORDERING: str = '!'
+MP_LENGTH_FIELD_SIZE: int = struct.calcsize(MP_BYTE_ORDERING + 'L')
 
 
 class DynamicPackingException(Exception):
@@ -54,7 +54,7 @@ def pack_dynamic(pack_fmt: string, *args) -> bytes:
             out_args.append(args[arg_index])
         arg_index += 1
 
-    return struct.pack(MESSAGE_PACKER_BYTE_ORDERING+out_fmt, *out_args)
+    return struct.pack(MP_BYTE_ORDERING + out_fmt, *out_args)
 
 
 def unpack_dynamic(pack_fmt: string, buffer: bytes) -> tuple:
@@ -72,17 +72,17 @@ def unpack_dynamic(pack_fmt: string, buffer: bytes) -> tuple:
             multiplier = 1
             if digit_backlog != "":
                 multiplier = int(digit_backlog)
-            to_remove = struct.calcsize(fmt_char) * multiplier
+            to_remove = struct.calcsize(MP_BYTE_ORDERING+fmt_char) * multiplier
 
             out_tuple = out_tuple + struct.unpack(
-                f'{MESSAGE_PACKER_BYTE_ORDERING}{digit_backlog}{fmt_char}', buffer[:to_remove])
+                f'{MP_BYTE_ORDERING}{digit_backlog}{fmt_char}', buffer[:to_remove])
             buffer = buffer[to_remove:]
             continue
 
-        vector_size = struct.unpack(f'{MESSAGE_PACKER_BYTE_ORDERING}L', buffer[:struct.calcsize('L')])[0]
-        buffer = buffer[struct.calcsize('L'):]
+        vector_size = struct.unpack(f'{MP_BYTE_ORDERING}L', buffer[:struct.calcsize(MP_BYTE_ORDERING+'L')])[0]
+        buffer = buffer[struct.calcsize(MP_BYTE_ORDERING+'L'):]
 
-        vector_contents = struct.unpack(f'{MESSAGE_PACKER_BYTE_ORDERING}{vector_size}s', buffer[:vector_size])
+        vector_contents = struct.unpack(f'{MP_BYTE_ORDERING}{vector_size}s', buffer[:vector_size])
         buffer = buffer[vector_size:]
 
         out_tuple = out_tuple + vector_contents
@@ -94,10 +94,10 @@ def unpack_byte_list(buffer: bytes) -> List[bytes]:
     pointer: int = 0
     out_list: List[bytes] = []
     while pointer < len(buffer):
-        entry_len: int = unpack_from(f'{MESSAGE_PACKER_BYTE_ORDERING}L', buffer, pointer)[0]
-        pointer += struct.calcsize('L')
+        entry_len: int = unpack_from(f'{MP_BYTE_ORDERING}L', buffer, pointer)[0]
+        pointer += struct.calcsize(MP_BYTE_ORDERING+'L')
 
-        entry: bytes = unpack_from(f'{MESSAGE_PACKER_BYTE_ORDERING}{entry_len}s', buffer, pointer)[0]
+        entry: bytes = unpack_from(f'{MP_BYTE_ORDERING}{entry_len}s', buffer, pointer)[0]
         pointer += entry_len
 
         out_list.append(entry)

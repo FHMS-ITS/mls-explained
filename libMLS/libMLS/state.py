@@ -53,14 +53,17 @@ class State:
     # todo: user user_credential
     # pylint: disable=unused-argument
     def add(self, user_init_key: bytes, user_credential: bytes) -> (WelcomeInfoMessage, AddMessage):
-        welcome: WelcomeInfoMessage = WelcomeInfoMessage()
-        welcome.epoch = self._context.epoch
-        welcome.group_id = self._context.group_id
-        welcome.init_secret = b'0'
-        welcome.interim_transcript_hash = b'0'
-        welcome.key = b'0'
-        welcome.nounce = b'0'
-        welcome.tree = []
+        # pylint: disable=unexpected-keyword-arg
+        welcome: WelcomeInfoMessage = WelcomeInfoMessage(
+            epoch=self._context.epoch,
+            group_id=self._context.group_id,
+            init_secret=bytes(bytearray(b'\x00') * self._cipher_suite.get_hash_length()),
+            interim_transcript_hash=bytes(bytearray(b'\x00') * self._cipher_suite.get_hash_length()),
+            key=b'0',
+            nounce=b'0',
+            tree=[],
+            protocol_version=b'0'
+        )
 
         # strip private keys
         for node in self._tree.get_nodes():

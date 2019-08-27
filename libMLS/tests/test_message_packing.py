@@ -4,8 +4,8 @@ from typing import List, Dict
 
 import pytest
 
-from libMLS.libMLS.message_packer import pack_dynamic, MESSAGE_PACKER_LENGTH_FIELD_SIZE, DynamicPackingException, \
-    unpack_dynamic, unpack_byte_list, MESSAGE_PACKER_BYTE_ORDERING
+from libMLS.libMLS.message_packer import pack_dynamic, MP_LENGTH_FIELD_SIZE, DynamicPackingException, \
+    unpack_dynamic, unpack_byte_list, MP_BYTE_ORDERING
 
 
 def test_plain_vector():
@@ -13,22 +13,22 @@ def test_plain_vector():
 
     for some_byte_string in cases:
         out: bytes = pack_dynamic('V', some_byte_string)
-        assert len(out) == MESSAGE_PACKER_LENGTH_FIELD_SIZE + len(some_byte_string)
-        assert struct.unpack('L', out[0:MESSAGE_PACKER_LENGTH_FIELD_SIZE])[0] == len(some_byte_string)
+        assert len(out) == MP_LENGTH_FIELD_SIZE + len(some_byte_string)
+        assert struct.unpack(f'{MP_BYTE_ORDERING}L', out[0:MP_LENGTH_FIELD_SIZE])[0] == len(some_byte_string)
 
 
 def test_normal_format_chars_pack():
     cases: Dict = {'c': b'a', 'L': 1337, '2s': b'aa'}
 
     for fmt_char, value in cases.items():
-        assert pack_dynamic(fmt_char, value) == struct.pack(fmt_char, value)
+        assert pack_dynamic(fmt_char, value) == struct.pack(MP_BYTE_ORDERING + fmt_char, value)
 
 
 def test_normal_format_chars_unpack():
     cases: Dict = {'c': [b'a'], 'L': [1337], '2s': [b'aa'], '2l': [1337, 7331]}
 
     for fmt_char, value in cases.items():
-        assert list(unpack_dynamic(fmt_char, struct.pack(fmt_char, *value))) == value
+        assert list(unpack_dynamic(fmt_char, struct.pack(MP_BYTE_ORDERING + fmt_char, *value))) == value
 
 
 def test_combined_payloads():
@@ -44,8 +44,8 @@ def test_combined_payloads():
 
     for fmt_string, arguments in cases.items():
         plain_fmt = fmt_string.replace('V', '')
-        plain_size = struct.calcsize(plain_fmt)
-        expected_size = plain_size + MESSAGE_PACKER_LENGTH_FIELD_SIZE + len(dyn_payload)
+        plain_size = struct.calcsize(MP_BYTE_ORDERING + plain_fmt)
+        expected_size = plain_size + MP_LENGTH_FIELD_SIZE + len(dyn_payload)
 
         assert expected_size == len(pack_dynamic(fmt_string, *arguments))
 
@@ -67,7 +67,7 @@ def test_stacked_payloads():
 def test_quantifier_untouched():
     fmt = '2L'
     values = [1337, 7331]
-    assert pack_dynamic(fmt, *values) == struct.pack(fmt, *values)
+    assert pack_dynamic(fmt, *values) == struct.pack(MP_BYTE_ORDERING + fmt, *values)
 
 
 def test_pack_unpack_combinations():
@@ -90,8 +90,8 @@ def test_pack_unpack_combinations():
 
 def test_empty_vector():
     packed = pack_dynamic('V', b'')
-    assert len(packed) == struct.calcsize('L')
-    assert struct.unpack(MESSAGE_PACKER_BYTE_ORDERING + 'L', packed)[0] == 0
+    assert len(packed) == struct.calcsize(MP_BYTE_ORDERING + 'L')
+    assert struct.unpack(MP_BYTE_ORDERING + 'L', packed)[0] == 0
 
     unpacked = unpack_dynamic('V', packed)
     assert len(unpacked) == 1

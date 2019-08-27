@@ -14,6 +14,6 @@ let
         src = ./.;
 
         propagatedBuildInputs = builtins.concatLists [ nativePythonPackages customPythonPackages ];
-        checkInputs = with pkgs.python37Packages; [ pytest pylint pytestcov ];
+        checkInputs = with pkgs.python37Packages; [ pytest pylint pytestcov pytest-dependency];
     };
 in output
