@@ -5,11 +5,11 @@ from libMLS.libMLS.tree_node import TreeNode
 from .tree_math import parent, level, root, left, right, is_leaf
 from .cipher_suite import CipherSuite
 from .tree_node import LeafNodeHashInput, LeafNodeInfo, ParentNodeHashInput
-from .x25519_cipher_suite import X25519CipherSuite
+
 
 class Tree:
 
-    def __init__(self, cipher_suite: CipherSuite = X25519CipherSuite(), nodes: Optional[List[Optional[TreeNode]]] = None):
+    def __init__(self, cipher_suite: CipherSuite, nodes: Optional[List[Optional[TreeNode]]] = None):
         self.cipher_suite = cipher_suite
 
         if nodes is None:
@@ -96,18 +96,18 @@ class Tree:
             self._nodes[current_index] = None
             last_index = current_index
 
-    def get_tree_hash(self):
+    def get_tree_hash(self) -> bytes:
         if self.get_root() is None:
             raise IndexError()
 
         return self._get_node_hash(node_index=self.get_root())
 
-    def _get_node_hash(self, node_index):
+    def _get_node_hash(self, node_index: int) -> bytes:
         if is_leaf(node_index):
             return self._get_leaf_hash(node_index)
         return self._get_intermediate_hash(node_index)
 
-    def _get_leaf_hash(self, node_index):
+    def _get_leaf_hash(self, node_index) -> bytes:
 
         if self._nodes[node_index]:
             node_info = LeafNodeInfo(self._nodes[node_index].get_public_key(),
@@ -121,7 +121,7 @@ class Tree:
         node_hash.update(bytes(hash_input))
         return node_hash.finalize()
 
-    def _get_intermediate_hash(self, node_index):
+    def _get_intermediate_hash(self, node_index: int) -> bytes:
         left_node = left(node_index)
         right_node = right(node_index, self.get_num_leaves())
 

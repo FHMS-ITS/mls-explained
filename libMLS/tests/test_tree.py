@@ -1,9 +1,10 @@
 from libMLS.libMLS.tree_node import TreeNode
 from libMLS.libMLS.tree import Tree
+from libMLS.libMLS.x25519_cipher_suite import X25519CipherSuite
 
 
 def test_node_can_be_added_to_empty_tree():
-    tree: Tree = Tree()
+    tree: Tree = Tree(cipher_suite=X25519CipherSuite())
 
     assert tree.get_num_nodes() == 0
     tree.add_leaf(TreeNode(b'public', None, b'A'))
@@ -13,7 +14,7 @@ def test_node_can_be_added_to_empty_tree():
 
 
 def test_add_node_blanks_path():
-    tree: Tree = Tree()
+    tree: Tree = Tree(cipher_suite=X25519CipherSuite())
     tree.add_leaf(TreeNode(b'publicA', None, b'A'))
     tree.add_leaf(TreeNode(b'publicB', None, b'B'))
 
@@ -25,7 +26,7 @@ def test_add_node_blanks_path():
 
 
 def test_get_leaf_count():
-    tree: Tree = Tree()
+    tree: Tree = Tree(cipher_suite=X25519CipherSuite())
 
     for should_be in range(11):
         assert tree.get_num_leaves() == should_be
@@ -33,7 +34,7 @@ def test_get_leaf_count():
 
 
 def test_get_hash_one_node():
-    tree: Tree = Tree()
+    tree: Tree = Tree(cipher_suite=X25519CipherSuite())
 
     assert tree.get_num_nodes() == 0
     tree.add_leaf(TreeNode(b'public', None, b'A'))
@@ -46,7 +47,7 @@ def test_get_hash_one_node():
 
 
 def test_tree_hash_changes_when_adding_nodes():
-    tree: Tree = Tree()
+    tree: Tree = Tree(cipher_suite=X25519CipherSuite())
 
     assert tree.get_num_nodes() == 0
     tree.add_leaf(TreeNode(b'public', None, b'A'))
@@ -67,8 +68,8 @@ def test_tree_hash_changes_when_adding_nodes():
 
 
 def test_trees_have_different_hashes_when_content_different():
-    tree1: Tree = Tree()
-    tree2: Tree = Tree()
+    tree1: Tree = Tree(cipher_suite=X25519CipherSuite())
+    tree2: Tree = Tree(cipher_suite=X25519CipherSuite())
 
     tree1.add_leaf(TreeNode(b'public', None, b'A'))
     tree2.add_leaf(TreeNode(b'public_key', None, b'A'))
@@ -82,7 +83,7 @@ def test_trees_have_different_hashes_when_content_different():
 
 
 def test_tree_hash_with_blank_leaf():
-    tree: Tree = Tree()
+    tree: Tree = Tree(cipher_suite=X25519CipherSuite())
 
     assert tree.get_num_nodes() == 0
 
@@ -91,3 +92,18 @@ def test_tree_hash_with_blank_leaf():
 
     assert tree.get_tree_hash() == \
            b'O4X\x84\xf4\xda\xed/\x94\xfd\x1e\xb9\xe5\xea\xf2?\xcd\x8a\x10\x1b~_\xf6L\xff\xa7\xf2\xbe%\x1d\xd9\xe1'
+
+
+def test_tree_hash_with_blank_intermediate():
+    tree: Tree = Tree(cipher_suite=X25519CipherSuite())
+
+    assert tree.get_num_nodes() == 0
+
+    tree.add_leaf(TreeNode(b'public', None, b'A'))
+    tree.add_leaf(None)
+    tree.add_leaf(TreeNode(b'public', None, b'B'))
+
+    tree.set_node(2, None)
+
+    assert tree.get_tree_hash() == \
+           b't}\xf5\x07\x80_\xfdu\x1d\xdd\xbf\xb8d~\xe0\xca,\xa2\xbe\xactl\x02\xc8\xb4\xf4]]\x91\xb1C~'
