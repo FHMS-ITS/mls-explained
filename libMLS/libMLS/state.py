@@ -9,6 +9,7 @@ from libMLS.libMLS.tree_math import parent, direct_path, sibling, copath, resolv
 from libMLS.libMLS.tree_node import TreeNode
 from libMLS.libMLS.messages import WelcomeInfoMessage, AddMessage, UpdateMessage, DirectPathNode, HPKECiphertext
 from libMLS.libMLS.tree import Tree
+from libMLS.libMLS.x25519_cipher_suite import X25519CipherSuite
 
 
 class State:
@@ -32,13 +33,13 @@ class State:
     @classmethod
     def from_existing(cls, cipher_suite: CipherSuite, context: GroupContext,
                       nodes: List[Optional[TreeNode]]) -> 'State':
-        tree: Tree = Tree(nodes=nodes)
+        tree: Tree = Tree(nodes=nodes, cipher_suite=X25519CipherSuite())
         return cls(cipher_suite=cipher_suite, tree=tree, context=context)
 
     @classmethod
     def from_empty(cls, cipher_suite: CipherSuite, context: GroupContext, leaf_public: bytes,
                    leaf_secret: bytes) -> 'State':
-        tree: Tree = Tree()
+        tree: Tree = Tree(cipher_suite=X25519CipherSuite())
         tree.add_leaf(TreeNode(leaf_public, leaf_secret, None))
 
         return cls(tree=tree, cipher_suite=cipher_suite, context=context)

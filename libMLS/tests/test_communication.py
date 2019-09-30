@@ -99,3 +99,6 @@ def test_update_message():
 
     # but make sure that bob does not know alice's private key
     assert bob_tree.get_node(0).get_private_key() is None
+
+    # compare tree hashses
+    assert alice_tree.get_tree_hash() == bob_tree.get_tree_hash()
