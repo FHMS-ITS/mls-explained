@@ -16,3 +16,9 @@ class GroupContext:
                self.epoch == other.epoch and \
                self.confirmed_transcript_hash == other.confirmed_transcript_hash and \
                self.tree_hash == other.tree_hash
+
+    def __bytes__(self):
+        tmp = b"".join([self.group_id, bytes([self.epoch])])
+        tmp = b"".join([tmp, self.tree_hash])
+        tmp = b"".join([tmp, self.confirmed_transcript_hash])
+        return tmp

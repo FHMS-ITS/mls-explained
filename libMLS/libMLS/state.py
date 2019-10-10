@@ -94,8 +94,7 @@ class State:
         node_secret = hkdf_expand_label(secret=path_secret,
                                         context=self._context,
                                         label=b"node",
-                                        cipher_suite=self._cipher_suite,
-                                        length=self._cipher_suite.get_hash_length())
+                                        cipher_suite=self._cipher_suite)
 
         self._tree.set_node(node_index=leaf_index * 2, node=TreeNode.from_node_secret(node_secret=node_secret,
                                                                                       cipher_suite=self._cipher_suite))
@@ -108,12 +107,10 @@ class State:
             node_index = parent(conode_index, self._tree.get_num_leaves())
 
             path_secret = hkdf_expand_label(secret=path_secret, context=self._context, label=b"path",
-                                            cipher_suite=self._cipher_suite,
-                                            length=self._cipher_suite.get_hash_length())
+                                            cipher_suite=self._cipher_suite)
 
             node_secret = hkdf_expand_label(secret=path_secret, context=self._context, label=b"node",
-                                            cipher_suite=self._cipher_suite,
-                                            length=self._cipher_suite.get_hash_length())
+                                            cipher_suite=self._cipher_suite)
 
             self._tree.set_node(node_index=node_index,
                                 node=TreeNode.from_node_secret(node_secret=node_secret,
@@ -169,8 +166,7 @@ class State:
                 path_secret: Optional[bytes] = entry.encrypted_path_secret[0].cipher_text
 
                 node_secret = hkdf_expand_label(secret=path_secret, context=self._context, label=b"node",
-                                                cipher_suite=self._cipher_suite,
-                                                length=self._cipher_suite.get_hash_length())
+                                                cipher_suite=self._cipher_suite)
 
                 computed_node = TreeNode.from_node_secret(
                     node_secret=node_secret,
