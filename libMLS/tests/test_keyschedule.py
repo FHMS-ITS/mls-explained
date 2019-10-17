@@ -4,65 +4,67 @@ from libMLS.libMLS.x25519_cipher_suite import X25519CipherSuite
 
 
 def test_new_keyschedule():
-    keyschedule = KeySchedule()
+    cipher_suite = X25519CipherSuite()
+    key_schedule = KeySchedule(cipher_suite)
 
-    assert keyschedule.get_init_secret() == b'0'
-    assert keyschedule.get_epoch_secret() == b''
-    assert keyschedule.get_sender_data_secret() == b''
-    assert keyschedule.get_handshake_secret() == b''
-    assert keyschedule.get_application_secret() == b''
-    assert keyschedule.get_confirmation_key() == b''
+    assert key_schedule.get_init_secret() == bytes(bytearray(b'\x00') * cipher_suite.get_hash_length())
+    assert key_schedule.get_epoch_secret() == b''
+    assert key_schedule.get_sender_data_secret() == b''
+    assert key_schedule.get_handshake_secret() == b''
+    assert key_schedule.get_application_secret() == b''
+    assert key_schedule.get_confirmation_key() == b''
 
 
-def test_update_keyschedule():
-    keyschedule = KeySchedule()
+# def test_update_keyschedule():
+    cipher_suite = X25519CipherSuite()
+    key_schedule = KeySchedule(cipher_suite)
     context = GroupContext(b'0', 0, b'treehash', b'confirmed_transcript')
 
-    keyschedule.update_key_schedule(b'update secret', context=context, cipher_suite=X25519CipherSuite())
+    key_schedule.update_key_schedule(b'update secret', context=context, cipher_suite=cipher_suite)
 
-    assert keyschedule.get_init_secret() == \
-           b'\x07\x15z|(\xd2k{\n\xa0\x94v{\xeb=\xec}\\\xb4tF>[\xc0\x8e\xa0\xf5|\x81\x94\x7fX'
-    assert keyschedule.get_epoch_secret() == \
-           b'\x8e\xfbDW\x15\x0e\xe2\xcd\x99\xbc\x16J\xad\x9eY\xa6F>\xe1\xe9ORX\xcd)\xc6O\xa9\xa70\xe0\x1f'
-    assert keyschedule.get_sender_data_secret() == \
-           b'\xbf\xa1f\xe9\xa4\t#\xb1S\xe0\xd2\x1f7\\\x1e-\xd4\xcf?\x01\xc0\xa0^=\xe1\xe0\xdf\xaf\xbcg\xf2\xf2'
-    assert keyschedule.get_handshake_secret() == \
-           b'\xef\xc8]nX/\xcc\xben\xfb\xe9\x88\xba\xf3(\xec\xd5J.\xee\xad\x0b\xdc\x8a;\x82\x99\xef\xde\x01\x16\xc4'
-    assert keyschedule.get_application_secret() == \
-           b'\x02\xb8\xb2\x8b\xdf\x84\xe7a9\x04\xfdQ\xda\x17(`8\x98\xc0-\x15\x16\x0e<E\x8a\x82\xdb^\x8c\xe8s'
-    assert keyschedule.get_confirmation_key() == \
-           b"\xf3\xf3\xc1'\xfa*\xd9BQg\x9a\xea\x18\xee\x8aS\xe8\x89\xa5\x85\t\x14F\x13\x04x\x88\xdd96R\xdd"
-
+    assert key_schedule.get_init_secret() == \
+           b'Hr?\xb7\xde\xfd\x1f)\xf83\xc8@\xeaJ\r\x86\x9e]\xc0!I}\x02\xed\xd5]}\xf0N$l\x99'
+    assert key_schedule.get_epoch_secret() == \
+           b'\x0c\xafJ\xc8J}I\xab:\xdf\xd2\xff\xcdQ\x16\x9b4ZL:,\t\xffg\x05\\W\xc1\xe0Gv\xd7'
+    assert key_schedule.get_sender_data_secret() == \
+           b'\xd9\x98w\xc3\xe6\xd9\xe9d\xe5Y\x93\x9e0\\3,|\xaae\x1d\x88e\x0e\x9cD\xcb\xa3i\xf2\xcd\xa6\xec'
+    assert key_schedule.get_handshake_secret() == \
+           b'k\xd7\xab!\xc2Kx\xcd"\xcf}=\xe1\x86M\xbc\xf8\x90:l\x83|b\t\np\x7f\xe7\xef\xa0\x7f\n'
+    assert key_schedule.get_application_secret() == \
+           b'C^\x83\xc4\xee\xc39A(\xec$\xde\x0f\x82\xd41\xc8\xfd4\x15%\x1b\x15IwOz\xf9\x1a\x1d0J'
+    assert key_schedule.get_confirmation_key() == \
+           b'aY\xdbl\xa1O\x9cp\n\xc4\x97\xe1\xfd\xd9\x9do\xe5z\x85\x8e\tv\xca\xcf\x1cn@<\xeecD\xff'
 
     context = GroupContext(b'0', 1, b'treehash2', b'confirmed_transcript2')
-    keyschedule.update_key_schedule(b'update secret2', context=context, cipher_suite=X25519CipherSuite())
+    key_schedule.update_key_schedule(b'update secret2', context=context, cipher_suite=X25519CipherSuite())
 
-    assert keyschedule.get_init_secret() == \
-           b'bS\x8ej\xd2\xf9\xef+q\nK\xef\x02?\x15\xf1\xf9@.\x9f\xeb\xee\xd8p\xd1\xc4\xa9F\xa5\x8c\xc8\xb6'
-    assert keyschedule.get_epoch_secret() == \
-           b'#\xb9\xf4\xae$jR\xcb\xfaF\x82!1(\x16\xec\x86\xa6\x06\x9d\xba\x05,Y);m\x1d\x05\xe4\xfc{'
-    assert keyschedule.get_sender_data_secret() == \
-           b'\xd1U\xe1\x07{hT\x19\xc4\xaf\x18\xaa=,\x88-\xe8v\xf7\x8bu\xe1\x17\rGl\x91v\x15\xaf\x7f\xa8'
-    assert keyschedule.get_handshake_secret() == \
-           b'\xa1\x8a\x0b&\x7fv\xe1_\xc6\xfc \xa8$\xa5\x16\xec\xf0\x16\xf3\xc6\x85\xd4i\x1c\xfd:Xw\xf5\x81U='
-    assert keyschedule.get_application_secret() == \
-           b'\x8d+!\xea\x14\xdfH\x87\xf8\xb2y\xf7\xa28\xa1\xcb\x1cp\x05\xa6b\x8a\xda\xf3\x94\xfa\x19\xe3\xb2%\xb8S'
-    assert keyschedule.get_confirmation_key() == \
-           b'ln\xcaT\x02\xe2\xb9\xea\xb5\xdb\x0b\xe94\xb6\x82\xe4h\x8a\x0e\xdd\xe6\xdd\xa5aP&OX\x05\xef\x83~'
+    assert key_schedule.get_init_secret() == \
+           b':\x98\x9f\xbf\x92\x8a[\xb09"&?\x0c\x03x;\x08\x05\x9er\xa7\xb9[\xef\xf7\x86\xdcQ=\xa9\xa8;'
+    assert key_schedule.get_epoch_secret() == \
+           b'\xe4<\x8fHg\x9e;\x92Z\xd4:]l\x00c\x1d\xdb\x90\x13\x0b n\xc0o!.=\xae{|\xc2^'
+    assert key_schedule.get_sender_data_secret() == \
+           b'\xb4>/3Brm\xd6\xff\x83\x11\xbd\xc1\x96\xc4%]\x1bq\x1a%l\xae\x05\x94\x16\xe4\x95TS\r\xb5'
+    assert key_schedule.get_handshake_secret() == \
+           b'\xba\xa5Z<\x1e\x7f\xb28/^\xf3\x0b\x19\x1c\t\xe4>"\x07\x84\xe5\'"\x99t\xe51\x8b2QH\x16'
+    assert key_schedule.get_application_secret() == \
+           b'"t\xdd\x82\xfcm\x8a\xc5*G\x84\x91\xc4\x86\xef\\\xcct\xb9\xe9\x0c\xc9\n;\xfeqi\x90\x17\x08\x8f\x83'
+    assert key_schedule.get_confirmation_key() == \
+           b',\xb4\xc8\x83\xd9\\h>)\x0f\r \xf4\x1f\nZ\xec.\xb7\x82\xb4"V)\xaa\xd7\xceYb\x83\xae\x96'
 
 
 def test_changing_init_secret():
-    keyschedule = KeySchedule()
+    cipher_suite = X25519CipherSuite()
+    key_schedule = KeySchedule(cipher_suite)
 
-    assert keyschedule.get_init_secret() == b'0'
+    assert key_schedule.get_init_secret() == bytes(bytearray(b'\x00') * cipher_suite.get_hash_length())
 
     context = GroupContext(b'0', 0, b'treehash', b'confirmed_transcript')
-    keyschedule.update_key_schedule(b'update secret', context=context, cipher_suite=X25519CipherSuite())
-    old_init_secret = keyschedule.get_init_secret()
+    key_schedule.update_key_schedule(b'update secret', context=context, cipher_suite=X25519CipherSuite())
+    old_init_secret = key_schedule.get_init_secret()
 
-    assert old_init_secret != b'0'
+    assert old_init_secret != bytes(bytearray(b'\x00') * cipher_suite.get_hash_length())
 
     context = GroupContext(b'0', 1, b'treehash2', b'confirmed_transcript2')
-    keyschedule.update_key_schedule(b'update secret2', context=context, cipher_suite=X25519CipherSuite())
+    key_schedule.update_key_schedule(b'update secret2', context=context, cipher_suite=X25519CipherSuite())
 
-    assert old_init_secret != keyschedule.get_init_secret()
+    assert old_init_secret != key_schedule.get_init_secret()

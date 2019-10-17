@@ -4,8 +4,8 @@ from libMLS.libMLS.cipher_suite import CipherSuite
 
 
 class KeySchedule:
-    def __init__(self):
-        self._init_secret: bytes = b'0'
+    def __init__(self, cipher_suite: CipherSuite):
+        self._init_secret: bytes = bytes(bytearray(b'\x00') * cipher_suite.get_hash_length())
         self._update_secret: bytes = b''
         self._epoch_secret: bytes = b''
         self._sender_data_secret: bytes = b''

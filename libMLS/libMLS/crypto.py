@@ -38,9 +38,8 @@ def hkdf_expand_label(secret: bytes, label: bytes, context: GroupContext, cipher
 
 
 def hkdf_extract(secret: bytes, salt: bytes, cipher_suite: CipherSuite) -> bytes:
-    # wie ist das label hier zu setzen?
     # todo: support hash from cipher suite
-    return HKDF(length=cipher_suite.get_hash_length(), info=b'0', salt=salt,
+    return HKDF(length=cipher_suite.get_hash_length(), info=None, salt=salt,
                 algorithm=hashes.SHA256(), backend=default_backend()).derive(secret)
 
 
