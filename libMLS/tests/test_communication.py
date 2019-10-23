@@ -1,5 +1,7 @@
+import pytest
+
 from libMLS.libMLS.local_key_store_mock import LocalKeyStoreMock
-from libMLS.libMLS.messages import UpdateMessage
+from libMLS.libMLS.messages import UpdateMessage, WelcomeInfoMessage, AddMessage
 from libMLS.libMLS.session import Session
 
 
@@ -60,6 +62,7 @@ def test_session_can_be_created_from_welcome():
     assert alice_state.get_tree() == bob_state.get_tree()
 
 
+@pytest.mark.dependency(name="test_update_message")
 def test_update_message():
     # init user keys
     alice_store = LocalKeyStoreMock('alice')
@@ -102,3 +105,49 @@ def test_update_message():
 
     # compare tree hashses
     assert alice_tree.get_tree_hash() == bob_tree.get_tree_hash()
+
+
+@pytest.mark.dependency(depends=["test_update_message"])
+def test_update_message_serialized():
+    # init user keys
+    alice_store = LocalKeyStoreMock('alice')
+    alice_store.register_keypair(b'0', b'0')
+
+    bob_store = LocalKeyStoreMock('bob')
+    bob_store.register_keypair(b'1', b'1')
+
+    # setup session
+    alice_session = Session.from_empty(alice_store, 'alice')
+    welcome, add = alice_session.add_member('bob', b'1')
+
+    welcome = WelcomeInfoMessage.from_bytes(welcome.pack())
+    add = AddMessage.from_bytes(add.pack())
+    bob_session = Session.from_welcome(welcome, bob_store, 'bob')
+
+    alice_session.process_add(add_message=add)
+    bob_session.process_add(add_message=add)
+
+    update: UpdateMessage = alice_session.update()
+    update = UpdateMessage.from_bytes(update.pack())
+
+    # assert that this update contains two nodes: The leaf and the root node
+    assert len(update.direct_path) == 2
+
+    # assert that the leaf node (node[0]) does not contain an encrypted path secret
+    assert update.direct_path[0].encrypted_path_secret == [], "leaf node must not contain an encrypted path secret"
+    # assert that the root node (node[1] contains one encrypted path secret for bob
+    assert len(update.direct_path[1].encrypted_path_secret) == 1
+
+    bob_session.process_update(0, update)
+
+    alice_tree = alice_session.get_state().get_tree()
+    bob_tree = bob_session.get_state().get_tree()
+
+    # assert that the public keys of the nodes are equal
+    assert alice_tree == bob_tree
+
+    # assert that the new, shared secret has been distributed
+    assert alice_tree.get_node(1).get_private_key() == bob_tree.get_node(1).get_private_key()
+
+    # but make sure that bob does not know alice's private key
+    assert bob_tree.get_node(0).get_private_key() is None

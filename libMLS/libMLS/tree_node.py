@@ -1,7 +1,9 @@
 from typing import Optional
-
 from dataclasses import dataclass
+
+from libMLS.libMLS.abstract_message import AbstractMessage
 from libMLS.libMLS.cipher_suite import CipherSuite
+from libMLS.libMLS.message_packer import pack_dynamic, unpack_dynamic
 
 
 @dataclass
@@ -39,7 +41,7 @@ class ParentNodeHashInput:
         return tmp
 
 
-class TreeNode:
+class TreeNode(AbstractMessage):
 
     def __init__(self, public_key: bytes, private_key: Optional[bytes] = None, credentials: Optional[bytes] = None):
         super().__init__()
@@ -68,11 +70,40 @@ class TreeNode:
         if not isinstance(other, TreeNode):
             return False
 
-        # return self._private_key == other._private_key and \
-        #        self._public_key == other._public_key and \
-        #        self._credential == other._credential
-
         return self._public_key == other.get_public_key()
+
+    def deep_eq(self, other) -> bool:
+
+        if not isinstance(other, TreeNode):
+            return False
+
+        # test public part
+        if not self == other:
+            return False
+
+        return self.get_private_key() == other.get_private_key() and self.get_credentials() == other.get_credentials()
 
     def __str__(self):
         return f'Public:{self._public_key.hex()} | Private:{self._private_key.hex() if self._private_key else "None"}'
+
+    @classmethod
+    def from_bytes(cls, data: bytes) -> 'TreeNode':
+        box: tuple = unpack_dynamic('VVV', data)
+
+        private_key: Optional[bytes] = box[1] if box[1] != b'' else None
+        credential: Optional[bytes] = box[2] if box[2] != b'' else None
+
+        inst: TreeNode = cls(public_key=box[0], private_key=private_key, credentials=credential)
+        if not inst.validate():
+            raise RuntimeError()
+
+        return inst
+
+    def _pack(self) -> bytes:
+        return pack_dynamic('VVV',
+                            self._public_key,
+                            self._private_key if self._private_key is not None else b'',
+                            self._credentials if self._credentials is not None else b'')
+
+    def validate(self) -> bool:
+        return self._public_key is not None
