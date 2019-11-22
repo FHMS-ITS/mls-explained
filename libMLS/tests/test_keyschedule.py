@@ -20,7 +20,7 @@ def test_new_keyschedule():
     key_schedule = KeySchedule(cipher_suite)
     context = GroupContext(b'0', 0, b'treehash', b'confirmed_transcript')
 
-    key_schedule.update_key_schedule(b'update secret', context=context, cipher_suite=cipher_suite)
+    key_schedule.update_key_schedule(b'update secret', context=context)
 
     assert key_schedule.get_init_secret() == \
            b'Hr?\xb7\xde\xfd\x1f)\xf83\xc8@\xeaJ\r\x86\x9e]\xc0!I}\x02\xed\xd5]}\xf0N$l\x99'
@@ -36,7 +36,7 @@ def test_new_keyschedule():
            b'aY\xdbl\xa1O\x9cp\n\xc4\x97\xe1\xfd\xd9\x9do\xe5z\x85\x8e\tv\xca\xcf\x1cn@<\xeecD\xff'
 
     context = GroupContext(b'0', 1, b'treehash2', b'confirmed_transcript2')
-    key_schedule.update_key_schedule(b'update secret2', context=context, cipher_suite=X25519CipherSuite())
+    key_schedule.update_key_schedule(b'update secret2', context=context)
 
     assert key_schedule.get_init_secret() == \
            b':\x98\x9f\xbf\x92\x8a[\xb09"&?\x0c\x03x;\x08\x05\x9er\xa7\xb9[\xef\xf7\x86\xdcQ=\xa9\xa8;'
@@ -59,12 +59,12 @@ def test_changing_init_secret():
     assert key_schedule.get_init_secret() == bytes(bytearray(b'\x00') * cipher_suite.get_hash_length())
 
     context = GroupContext(b'0', 0, b'treehash', b'confirmed_transcript')
-    key_schedule.update_key_schedule(b'update secret', context=context, cipher_suite=X25519CipherSuite())
+    key_schedule.update_key_schedule(b'update secret', context=context)
     old_init_secret = key_schedule.get_init_secret()
 
     assert old_init_secret != bytes(bytearray(b'\x00') * cipher_suite.get_hash_length())
 
     context = GroupContext(b'0', 1, b'treehash2', b'confirmed_transcript2')
-    key_schedule.update_key_schedule(b'update secret2', context=context, cipher_suite=X25519CipherSuite())
+    key_schedule.update_key_schedule(b'update secret2', context=context)
 
     assert old_init_secret != key_schedule.get_init_secret()

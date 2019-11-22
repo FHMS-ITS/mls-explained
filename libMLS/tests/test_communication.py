@@ -61,6 +61,10 @@ def test_session_can_be_created_from_welcome():
     assert bob_state.get_tree().get_num_nodes() == 3 and bob_state.get_tree().get_num_leaves() == 2
     assert alice_state.get_tree() == bob_state.get_tree()
 
+    # compare key schedule secrets
+    assert alice_session.get_state().get_key_schedule().get_epoch_secret() == \
+           bob_session.get_state().get_key_schedule().get_epoch_secret()
+
 
 @pytest.mark.dependency(name="test_update_message")
 def test_update_message():
@@ -105,6 +109,10 @@ def test_update_message():
 
     # compare tree hashses
     assert alice_tree.get_tree_hash() == bob_tree.get_tree_hash()
+
+    # compare key schedule secrets
+    assert alice_session.get_state().get_key_schedule().get_epoch_secret() == \
+           bob_session.get_state().get_key_schedule().get_epoch_secret()
 
 
 @pytest.mark.dependency(depends=["test_update_message"])

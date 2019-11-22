@@ -289,6 +289,7 @@ class HPKECiphertext(AbstractMessage):
 
 
 @dataclass
+# pylint: disable=too-many-instance-attributes
 class WelcomeInfoMessage(AbstractMessage):
     protocol_version: bytes
     group_id: bytes

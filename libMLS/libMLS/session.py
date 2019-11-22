@@ -27,6 +27,7 @@ class Session:
         )
 
         state = State.from_existing(cipher_suite=X25519CipherSuite(), context=context, nodes=welcome.tree)
+        state.get_key_schedule().set_init_secret(welcome.init_secret)
         return cls(state, key_store, user_name, user_index=None)
 
     # todo: Use user_credentials

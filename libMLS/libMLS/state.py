@@ -5,6 +5,7 @@ from typing import Optional, List
 from libMLS.libMLS.cipher_suite import CipherSuite
 from libMLS.libMLS.crypto import hkdf_expand_label
 from libMLS.libMLS.group_context import GroupContext
+from libMLS.libMLS.key_schedule import KeySchedule, advance_epoch
 from libMLS.libMLS.tree_math import parent, direct_path, sibling, copath, resolve
 from libMLS.libMLS.tree_node import TreeNode
 from libMLS.libMLS.messages import WelcomeInfoMessage, AddMessage, UpdateMessage, DirectPathNode, HPKECiphertext
@@ -29,6 +30,7 @@ class State:
         self._init_secret: int = 0  # todo: 0 is probably a bad init secret
         self._tree = tree
         self._context = context
+        self._key_schedule = KeySchedule(self._cipher_suite)
 
     @classmethod
     def from_existing(cls, cipher_suite: CipherSuite, context: GroupContext,
@@ -50,6 +52,9 @@ class State:
     def get_group_context(self) -> GroupContext:
         return self._context
 
+    def get_key_schedule(self) -> KeySchedule:
+        return self._key_schedule
+
     # todo: user user_credential
     # pylint: disable=unused-argument
     def add(self, user_init_key: bytes, user_credential: bytes) -> (WelcomeInfoMessage, AddMessage):
@@ -57,7 +62,7 @@ class State:
         welcome: WelcomeInfoMessage = WelcomeInfoMessage(
             epoch=self._context.epoch,
             group_id=self._context.group_id,
-            init_secret=bytes(bytearray(b'\x00') * self._cipher_suite.get_hash_length()),
+            init_secret=self._key_schedule.get_init_secret(),
             interim_transcript_hash=bytes(bytearray(b'\x00') * self._cipher_suite.get_hash_length()),
             key=b'0',
             nounce=b'0',
@@ -81,6 +86,9 @@ class State:
     def process_add(self, add_message: AddMessage, private_key=Optional[bytes]) -> None:
         # todo: validate stuff
         self._tree.add_leaf(TreeNode(add_message.init_key, private_key, None))
+
+        advance_epoch(self._context, self._key_schedule,
+                      bytes(bytearray(b'\x00') * self._cipher_suite.get_hash_length()))
 
     def update(self, leaf_index: int) -> UpdateMessage:
         # TODO: ACTHUNG ACHTUNG RESEQUENCING
@@ -106,11 +114,13 @@ class State:
         nodes_out.append(DirectPathNode(public_key=self._tree.get_node(leaf_index).get_public_key(),
                                         encrypted_path_secret=[]))
 
+        last_path_secret = None
         for conode_index in nodes_in_copath:
             node_index = parent(conode_index, self._tree.get_num_leaves())
 
             path_secret = hkdf_expand_label(secret=path_secret, context=self._context, label=b"path",
                                             cipher_suite=self._cipher_suite)
+            last_path_secret = path_secret
 
             node_secret = hkdf_expand_label(secret=path_secret, context=self._context, label=b"node",
                                             cipher_suite=self._cipher_suite)
@@ -137,6 +147,7 @@ class State:
             nodes_out.append(DirectPathNode(public_key=self._tree.get_node(node_index).get_public_key(),
                                             encrypted_path_secret=ciphers))
 
+        self._key_schedule.update_key_schedule(last_path_secret, self._context)
         return UpdateMessage(direct_path=nodes_out)
 
     def process_update(self, leaf_index: int, message: UpdateMessage) -> None:
@@ -152,6 +163,7 @@ class State:
         self._tree.set_node(node_index=leaf_index * 2, node=TreeNode(message.direct_path[0].public_key, None, None))
 
         last_node_index = leaf_index * 2
+        last_path_secret = None
         for entry in message.direct_path[1:]:
             current_node_index = parent(last_node_index, self._tree.get_num_nodes())
 
@@ -167,6 +179,7 @@ class State:
 
                 # todo: decrypt secret here, as soon as it is encrypted
                 path_secret: Optional[bytes] = entry.encrypted_path_secret[0].cipher_text
+                last_path_secret = path_secret
 
                 node_secret = hkdf_expand_label(secret=path_secret, context=self._context, label=b"node",
                                                 cipher_suite=self._cipher_suite)
@@ -181,3 +194,5 @@ class State:
                 break
 
             self._tree.set_node(current_node_index, computed_node)
+
+        advance_epoch(self._context, self._key_schedule, last_path_secret)
