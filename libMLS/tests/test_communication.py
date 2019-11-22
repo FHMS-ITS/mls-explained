@@ -31,7 +31,7 @@ def test_session_can_be_created_from_welcome():
     bob_store.register_keypair(b'1', b'1')
 
     # setup session
-    alice_session = Session.from_empty(alice_store, 'alice')
+    alice_session = Session.from_empty(alice_store, 'alice', 'test')
     welcome, add = alice_session.add_member('bob', b'1')
     bob_session = Session.from_welcome(welcome, bob_store, 'bob')
 
@@ -76,7 +76,7 @@ def test_update_message():
     bob_store.register_keypair(b'1', b'1')
 
     # setup session
-    alice_session = Session.from_empty(alice_store, 'alice')
+    alice_session = Session.from_empty(alice_store, 'alice', 'test')
     welcome, add = alice_session.add_member('bob', b'1')
     bob_session = Session.from_welcome(welcome, bob_store, 'bob')
 
@@ -125,7 +125,7 @@ def test_update_message_serialized():
     bob_store.register_keypair(b'1', b'1')
 
     # setup session
-    alice_session = Session.from_empty(alice_store, 'alice')
+    alice_session = Session.from_empty(alice_store, 'alice', 'test')
     welcome, add = alice_session.add_member('bob', b'1')
 
     welcome = WelcomeInfoMessage.from_bytes(welcome.pack())

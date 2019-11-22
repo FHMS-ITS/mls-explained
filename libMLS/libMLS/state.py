@@ -27,7 +27,6 @@ class State:
         """
         # todo: Credentials, private key
         self._cipher_suite: CipherSuite = cipher_suite
-        self._init_secret: int = 0  # todo: 0 is probably a bad init secret
         self._tree = tree
         self._context = context
         self._key_schedule = KeySchedule(self._cipher_suite)

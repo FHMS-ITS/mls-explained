@@ -1,12 +1,14 @@
 import string
 from typing import Dict, Optional
 
+from libMLS.libMLS.abstract_keystore import AbstractKeystore
 from libMLS.libMLS.remote_key_store_mock import RemoteKeyStoreMock
 
 
-class LocalKeyStoreMock:
+class LocalKeyStoreMock(AbstractKeystore):
 
     def __init__(self, user_name: string):
+        super().__init__(user_name)
         self._name: string = user_name
 
         self._public_private_keymap: Dict[bytes, bytes] = {}

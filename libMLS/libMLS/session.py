@@ -32,10 +32,10 @@ class Session:
 
     # todo: Use user_credentials
     @classmethod
-    def from_empty(cls, key_store: LocalKeyStoreMock, user_name: string) -> 'Session':
+    def from_empty(cls, key_store: LocalKeyStoreMock, user_name: string, group_name: string) -> 'Session':
 
         empty_context: GroupContext = GroupContext(
-            group_id=b'0',
+            group_id=group_name.encode('ascii'),
             epoch=0,
             tree_hash=b'0',
             confirmed_transcript_hash=b'0'

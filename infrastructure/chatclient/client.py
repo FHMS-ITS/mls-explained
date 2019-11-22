@@ -2,11 +2,14 @@
 MLS CLient
 """
 import json
-from dataclasses import dataclass
-from typing import List
+from dataclasses import dataclass, field
+from typing import List, Dict
 import requests
+import LibMLS
 
 from store.message_store import Message
+
+from infrastructure.chatclient.KeyService import KeyService
 
 
 def check_auth_server(ip_address: str) -> bool:
@@ -15,6 +18,7 @@ def check_auth_server(ip_address: str) -> bool:
     """
     response = requests.get("http://" + ip_address + "/")
     return response.text == "MLS AUTH SERVER"
+
 
 def check_dir_server(ip_address: str) -> bool:
     """
@@ -30,7 +34,8 @@ class User:
     Manages Data and devices ascociated with a user
     """
     name: str
-    devices: List[str]
+    devices: List[str] = field(default_factory=['phone'])
+
 
 @dataclass
 class Chat:
@@ -41,10 +46,13 @@ class Chat:
     users: List[User]
     messages: List[Message]
 
-    def __init__(self, name: str):
-        self.name = name
+    def __init__(self, username: str, groupname: str, keystore: KeyService):
+        self.name = username
         self.users = []
         self.messages = []
+
+        self.session = LibMLS.Session.from_empty(keystore, username, groupname)
+
 
 class MLSClient:
     """
@@ -56,16 +64,19 @@ class MLSClient:
         self.dir_server = dir_server
         self.user = user
         self.device = device
-        self.chats = []
+        self.chats: Dict[str, Chat] = {}
+        self.keystore = KeyService(user, dir_server)
 
     def add_contact(self, user: str, device: str):
         """
+        #TODO: Rename app_add_contact
         creates and adds chat for single user
         """
-        contact = User(user, [device])
-        chat = Chat(user)
-        chat.users.append(contact)
-        self.chats.append(chat)
+        # contact = User(user, [device])
+        # chat = Chat(user)
+        # chat.users.append(contact)
+        # self.chats.append(chat)
+        pass
 
     def send_message(self, receivers: List[User], message: str):
         """
@@ -114,26 +125,8 @@ class MLSClient:
         params = {"user": user}
         response = requests.get("http://" + self.dir_server + "/message", params=params)
 
-        print(response.text)
 
-    def publish_initial_keys(self, user: str, keys: List[int]):
-        """
-        publish initial key on dir server
-        :param user:
-        :param keys:
-        :return:
-        """
-        keydata = json.dumps({"user": user, "init_keys": keys})
-        response = requests.post("http://" + self.dir_server + "/keys", data=keydata)
-        print(response)
 
-    def get_init_key(self, user: str):
-        """
-        get init_key from a given user
-        """
-        params = {"user": user}
-        response = requests.get("http://" + self.dir_server + "/message", params=params)
-        print(response.text)
     def group_creation(self, group_name: str, user: str):
         """
         create a group with yourself and user
@@ -150,8 +143,9 @@ class MLSClient:
         # Send welcome messaged directly to the member added first
 
         # Add further Members with group_add
+        self.chats[group_name] = (Chat(user, group_name, self.keystore))
 
-    def group_add(self, identifier: int, user: str):
+    def group_add(self, group_name: str, user: str):
         """
         Add a member to a group
         Just adding to channel for now
@@ -166,6 +160,18 @@ class MLSClient:
 
         # send welcome message
 
+        chat = self.chats[group_name]
+        user = User(name=user)
+
+        WelcomeInfoMessage, AddMessage = chat.session.add_member(user, b'0')
+
+        welcome_payload = WelcomeInfoMessage.pack()
+        add_payload = AddMessage.pack()
+
+        self.send_message([user], welcome_payload.decode('ascii'))
+        chat.users.append(user)
+        self.send_message(chat.users, add_payload.decode('ascii'))
+
     def get_recievers(self, chat_identifier: str) -> List[User]:
         """
         returns all receivers in a given chat
@@ -174,6 +180,7 @@ class MLSClient:
             if chat.name == chat_identifier:
                 return chat.users
         return None
+
 
 def print_main_menu():
     """
@@ -184,7 +191,11 @@ def print_main_menu():
     print("2) Request Messages")
     print("3) Send Authkey to Authserver")
     print("4) Send Initkey to Dirserver")
+    print("5) Create Group")
+    print("6) Add Member")
+    print("7) Remove Member")
     print("99) Exit")
+
 
 # pylint: disable=too-many-function-args
 # false positive?
@@ -195,7 +206,7 @@ def main():
     """
     menu_item = 0
 
-    #load config_file
+    # load config_file
     try:
         with open("config.json", "r") as config_file:
             config = json.load(config_file)
@@ -204,15 +215,13 @@ def main():
             user = config["user"]
             device = config["device"]
     except (KeyError, FileNotFoundError):
-        #set defaults
+        # set defaults
         dir_server = "127.0.0.1:5000"
         auth_server = "127.0.0.1:5001"
         user = "Jan"
         device = "Phone"
 
     client = MLSClient(auth_server, dir_server, user, device)
-
-
 
     while menu_item != "99":
         print_main_menu()
@@ -228,7 +237,7 @@ def main():
             print("No Receiver found")
             continue
         if menu_item == "2":
-            print(client.get_messages(client.user, client.device))
+            print(client.get_messages(client.user))
             continue
         if menu_item == "3":
             key = input("Enter new Auth Key")
@@ -236,5 +245,14 @@ def main():
             continue
         if menu_item == "4":
             key = input("Enter new init key")
-            client.publish_initial_keys(client.user, key)
+            client.keystore.register_keypair(key.encode('ascii'), b'0')
             continue
+        if menu_item == "5":
+            # create grp
+            pass
+        if menu_item == "6":
+            # Add member
+            pass
+        if menu_item == "7":
+            # Remove member
+            pass
