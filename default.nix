@@ -14,5 +14,3 @@ let
     #integration_test = import ./integration-tests.nix;
 
 in pkgs.linkFarm "mls" [ {name="infrastructure"; path=infrastructure;} {name="libMLS";path=libMLS;} ]
-
-in output
