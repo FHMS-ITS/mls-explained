@@ -31,7 +31,7 @@ muss lediglich `nix-build` eingegeben werden. Üblicherweise reicht zur Installa
 Bei Installationsfehler "Clone Operation not permitted":
 https://github.com/NixOS/nix/issues/2633
 
-Wenn nix-* Befehle nach Installationnicht verfügbar sind:
+Wenn nix-* Befehle nach Installation nicht verfügbar sind:
 https://github.com/NixOS/nix/issues/879#issuecomment-410904367
 
 #### Git Workflow

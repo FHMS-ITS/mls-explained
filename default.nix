@@ -1,16 +1,22 @@
-with import <nixpkgs> {};
-
-# special thanks to tfc for the inspiration https://github.com/tfc/nix_cmake_example/blob/master/release.nix
+{
+  nixpkgs ? null
+}:
 
 let
-    infrastructure = import ./infrastructure/default.nix;
-    libMLS = import ./libMLS/default.nix;
+    pkgs = import ./pinned-nixpkgs.nix{inherit nixpkgs;};
+in
+   with pkgs;
+let
 
-    #todo: Infrastructure
+    infrastructure = import ./infrastructure/default.nix {inherit nixpkgs;};
+    libMLS = import ./libMLS/default.nix {inherit nixpkgs;};
+
     #integration_test = import ./integration-tests.nix;
 
     # symlink join merges two derivations
-in symlinkJoin {
-    name ="mls";
-    paths = [ infrastructure libMLS ];
-}
+    output = pkgs.symlinkJoin {
+        name ="mls";
+        paths = [ infrastructure libMLS ];
+    };
+
+in output
