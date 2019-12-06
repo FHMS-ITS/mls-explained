@@ -15,13 +15,12 @@ let
 
         src = ./.;
 
-        propagatedBuildInputs = [ python37Packages.flask python37Packages.requests libMLS];
+        propagatedBuildInputs = [ python37Packages.flask python37Packages.requests libMLS ];
         checkInputs = with python37Packages; [ pytest pylint pytestcov ];
 
         checkPhase = ''
-            mkdir -p $out/logs
-            PYLINTRC=$src/.pylintrc py.test -s --cov=$pname tests | tee $out/logs/test.log
-          '';
+            PYLINTRC=$src/.pylintrc py.test -s --cov=$pname tests
+         '';
 
     };
 in output

@@ -3,12 +3,15 @@ MLS CLient
 """
 import json
 from dataclasses import dataclass, field
-from typing import List, Dict
+from typing import List, Dict, Optional
 import requests
 import libMLS
 
 from store.message_store import Message
 
+from libMLS.libMLS import Session
+from libMLS.libMLS.abstract_application_handler import AbstractApplicationHandler
+from libMLS.libMLS.messages import MLSCiphertext
 from .KeyService import KeyService
 
 
@@ -46,20 +49,30 @@ class Chat:
     users: List[User]
     messages: List[Message]
 
-    def __init__(self, username: str, groupname: str, keystore: KeyService):
+    def __init__(self, username: str, groupname: str, keystore: KeyService, session: Session, chat_users: List):
         self.name = username
-        self.users = []
+        self.users = chat_users
         self.messages = []
 
-        self.session = LibMLS.Session.from_empty(keystore, username, groupname)
+        self.session = session
+
+    @classmethod
+    def from_welcome(cls,chat_users, username, groupname, session, keystore) -> "Chat":
+        return cls(chat_users=chat_users, username=username, groupname=groupname, session=session, keystore=keystore)
+
+    @classmethod
+    def from_empty(cls,  username, groupname, keystore):
+        session = libMLS.Session.from_empty(keystore, username, groupname)
+        return cls(username=username, groupname=groupname, keystore=keystore, chat_users=[], session=session)
 
 
-class MLSClient:
+class MLSClient(AbstractApplicationHandler):
     """
     Client of the MLS Infrastructure
     """
 
     def __init__(self, auth_server: str, dir_server: str, user: str, device: str):
+        super().__init__()
         self.auth_server = auth_server
         self.dir_server = dir_server
         self.user = user
@@ -78,7 +91,12 @@ class MLSClient:
         # self.chats.append(chat)
         pass
 
-    def send_message(self, receivers: List[User], message: str):
+    def send_message_to_user(self, user_name: str, message: bytes):
+        message_data = json.dumps({"receivers": [user_name], "message": message})
+        response = requests.post("http://" + self.dir_server + "/message",
+                                 data=message_data)
+
+    def send_message_to_group(self, group_name: str, message: str):
         """
         Sends message to dirserver to do serverside fanout
 
@@ -89,7 +107,13 @@ class MLSClient:
         :param message: The Message itself
         :return: some Return code???
         """
-        message_data = json.dumps({"receivers": receivers, "message": message})
+
+        chat = self.chats[group_name]
+        user = chat.users
+
+        chat.session.encrypt_application_message(message=message)
+
+        message_data = json.dumps({"receivers": user, "message": message})
         response = requests.post("http://" + self.dir_server + "/message",
                                  data=message_data)
         print(response.text)
@@ -125,7 +149,28 @@ class MLSClient:
         params = {"user": user}
         response = requests.get("http://" + self.dir_server + "/message", params=params)
 
+        messages: Dict[bytes] = json.loads(response.content)
+        for message in messages:
+            name = Session.get_groupid_from_cipher(data=message).decode('UTF-8')
+            self.chats[name].session.process_message(message)
 
+    def on_application_message(self, application_data: bytes):
+        print(f"Received Message: \n{application_data.decode('UTF-8')}")
+
+    def on_group_welcome(self, session: Session):
+        group_name = session.get_state().get_group_context().group_id.decode('UTF-8')
+        chat = Chat.from_welcome(
+            chat_users=[],
+            username=self.user,
+            groupname=group_name,
+            session=session,
+            keystore=self.keystore
+        )
+
+        self.chats[group_name] = chat
+
+    def on_group_member_added(self, group_id: bytes):
+        pass
 
     def group_creation(self, group_name: str, user: str):
         """
@@ -143,7 +188,7 @@ class MLSClient:
         # Send welcome messaged directly to the member added first
 
         # Add further Members with group_add
-        self.chats[group_name] = (Chat(user, group_name, self.keystore))
+        self.chats[group_name] = Chat.from_empty(user, group_name, self.keystore)
 
     def group_add(self, group_name: str, user: str):
         """
@@ -161,16 +206,15 @@ class MLSClient:
         # send welcome message
 
         chat = self.chats[group_name]
-        user = User(name=user)
 
         WelcomeInfoMessage, AddMessage = chat.session.add_member(user, b'0')
 
         welcome_payload = WelcomeInfoMessage.pack()
         add_payload = AddMessage.pack()
 
-        self.send_message([user], welcome_payload.decode('ascii'))
-        chat.users.append(user)
-        self.send_message(chat.users, add_payload.decode('ascii'))
+        self.send_message_to_user(user, welcome_payload.decode('ascii'))
+        chat.users.append(User(user))
+        self.send_message_to_group(user, add_payload.decode('ascii'))
 
     def get_recievers(self, chat_identifier: str) -> List[User]:
         """
@@ -232,7 +276,7 @@ def main():
             receiver_list = client.get_recievers(receiver)
             if receiver_list is not None:
                 message = input("Enter Message:")
-                client.send_message(receiver_list, message)
+                client.send_message_to_group(receiver_list, message)
                 continue
             print("No Receiver found")
             continue

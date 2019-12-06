@@ -1,8 +1,10 @@
 import string
 from typing import Optional
 
+from libMLS.libMLS.abstract_application_handler import AbstractApplicationHandler
 from libMLS.libMLS.local_key_store_mock import LocalKeyStoreMock
-from libMLS.libMLS.messages import WelcomeInfoMessage, AddMessage, UpdateMessage
+from libMLS.libMLS.messages import WelcomeInfoMessage, AddMessage, UpdateMessage, MLSCiphertext, ContentType, \
+    MLSSenderData
 from libMLS.libMLS.state import State
 from libMLS.libMLS.group_context import GroupContext
 from libMLS.libMLS.x25519_cipher_suite import X25519CipherSuite
@@ -61,8 +63,8 @@ class Session:
         group must take two actions:
         1.  Send a Welcome message to the new member
         2.  Send an Add message to the group (including the new member)
-        :param user_init_key:
-        :param user_credential:
+        :param user_credentials:
+        :param user_name:
         :return:
         """
 
@@ -102,3 +104,33 @@ class Session:
     def process_update(self, leaf_index: int, update_message: UpdateMessage) -> None:
         # todo: We still do not know which leaf to update with this add message
         self._state.process_update(leaf_index=leaf_index, message=update_message)
+
+    def encrypt_application_message(self, message: str) -> MLSCiphertext:
+
+        # pylint: disable=unexpected-keyword-arg
+        sender_data = MLSSenderData(sender=self._user_index, generation=0)
+
+        # pylint: disable=unexpected-keyword-arg
+        out = MLSCiphertext(
+            group_id=self._state.get_group_context().group_id,
+            epoch=self._state.get_group_context().epoch,
+            content_type=ContentType.APPLICATION,
+            sender_data_nounce=b'0',
+            encrypted_sender_data=sender_data.pack(),
+            ciphertext=message.encode('UTF-8')
+        )
+
+        return out
+
+    # pylint: disable=no-self-use
+    def process_message(self, message: MLSCiphertext, handler: AbstractApplicationHandler) -> None:
+        if message.content_type == ContentType.APPLICATION:
+            handler.on_application_message(message.ciphertext)
+        elif message.content_type == ContentType.HANDSHAKE:
+            pass
+        else:
+            raise RuntimeError()
+
+    @staticmethod
+    def get_groupid_from_cipher(data: bytes) -> bytes:
+        return MLSCiphertext.from_bytes(data).group_id

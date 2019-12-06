@@ -217,20 +217,56 @@ class MLSPlaintextHandshake(AbstractMessage):
         pass
 
 
+@dataclass
 class MLSPlaintextApplicationData(AbstractMessage):
     application_data: bytes
 
     def validate(self) -> bool:
-        return False
+        return True
 
     def _pack(self) -> bytes:
-        pass
+        return pack_dynamic('v', self.application_data)
 
     @classmethod
     def from_bytes(cls, data: bytes):
-        pass
+        box: tuple = unpack_dynamic('V', data)
+        # pylint: disable=unexpected-keyword-arg
+        inst: MLSPlaintextApplicationData = cls(application_data=box[0])
+
+        if not inst.validate():
+            raise RuntimeError()
+
+        return inst
 
 
+@dataclass
+class MLSSenderData(AbstractMessage):
+    sender: int
+    generation: int
+
+    def validate(self) -> bool:
+        return True
+
+    @classmethod
+    def from_bytes(cls, data: bytes):
+        box: tuple = unpack_dynamic('II', data)
+        # pylint: disable=unexpected-keyword-arg
+        inst: MLSSenderData = cls(sender=box[0], generation=box[1])
+
+        if not inst.validate():
+            raise RuntimeError()
+
+        return inst
+
+    def _pack(self) -> bytes:
+        return pack_dynamic(
+            'II',
+            self.sender,
+            self.generation
+        )
+
+
+@dataclass
 class MLSPlaintext(AbstractMessage):
     group_id: bytes
     epoch: int
@@ -240,11 +276,12 @@ class MLSPlaintext(AbstractMessage):
     signature: bytes
 
     def validate(self) -> bool:
-        return len(self.group_id) <= 256 and len(self.signature) < 2 ** 16
+        # return len(self.group_id) <= 256 and len(self.signature) < 2 ** 16
+        return True
 
     def _pack(self) -> bytes:
-        return pack(
-            'pIIBpH',
+        return pack_dynamic(
+            'VIIBVV',
             self.group_id,
             self.epoch,
             self.sender,
@@ -252,6 +289,42 @@ class MLSPlaintext(AbstractMessage):
             self.content.pack(),
             self.signature
         )
+
+    @classmethod
+    def from_bytes(cls, data: bytes):
+        box: tuple = unpack_dynamic('VIIBVV', data)
+        # pylint: disable=unexpected-keyword-arg
+        inst: MLSPlaintext = cls(group_id=box[0], epoch=box[1], sender=box[2], content_type=box[3], content=box[4],
+                                 signature=box[5])
+
+        if not inst.validate():
+            raise RuntimeError()
+
+        return inst
+
+
+@dataclass
+class MLSCiphertext(AbstractMessage):
+    # todo: Replace prefix with SenderDataAAD
+    group_id: bytes
+    epoch: int
+    content_type: ContentType
+    sender_data_nounce: bytes
+    encrypted_sender_data: bytes
+    ciphertext: bytes
+
+    def validate(self) -> bool:
+        return True
+
+    def _pack(self) -> bytes:
+        return pack_dynamic('VIBVVV',
+                            self.group_id,
+                            self.epoch,
+                            self.content_type,
+                            self.sender_data_nounce,
+                            self.encrypted_sender_data,
+                            self.ciphertext
+                            )
 
     @classmethod
     def from_bytes(cls, data: bytes):
