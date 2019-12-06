@@ -5,11 +5,11 @@ import json
 from dataclasses import dataclass, field
 from typing import List, Dict
 import requests
-import LibMLS
+import libMLS
 
 from store.message_store import Message
 
-from infrastructure.chatclient.KeyService import KeyService
+from .KeyService import KeyService
 
 
 def check_auth_server(ip_address: str) -> bool:

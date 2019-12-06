@@ -8,8 +8,8 @@ in
    with pkgs;
 let
 
-    infrastructure = import ./infrastructure/default.nix {inherit nixpkgs;};
     libMLS = import ./libMLS/default.nix {inherit nixpkgs;};
+    infrastructure = import ./infrastructure/default.nix {inherit nixpkgs libMLS;};
 
     #integration_test = import ./integration-tests.nix;
 

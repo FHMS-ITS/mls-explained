@@ -1,0 +1,26 @@
+#!/usr/bin/env python3
+
+# let's say you have a C++ project in Nix that you want to work on with CLion so that the Nix dependencies are available
+# put this script in your project directory
+# then, in Settings -> Build, Execution, Deployment -> Toolchains set CMake to this script
+# if you need any extra nix-shell arguments, add them to the invocation at the bottom
+
+import os
+import sys
+import shlex
+
+scriptDir = os.path.dirname(os.path.realpath(__file__))
+
+args = list(map(shlex.quote, sys.argv[1:]))
+
+cwd = os.getcwd()
+cmd = 'cd ' + cwd + ' && python3 ' + ' '.join(args)
+
+os.chdir(scriptDir+'/.')
+print(cwd)
+os.execvp("nix-shell", [
+  'nix-shell',
+  #'--pure',
+  '--run', cmd
+  ])
+

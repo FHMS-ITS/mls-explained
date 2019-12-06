@@ -3,7 +3,7 @@ from typing import Optional
 
 import requests
 
-from infrastructure.libMLS.abstract_keystore import AbstractKeystore
+from libMLS.abstract_keystore import AbstractKeystore
 
 
 class KeyService(AbstractKeystore):
