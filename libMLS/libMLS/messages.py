@@ -180,6 +180,7 @@ class RemoveMessage(AbstractMessage):
         pass
 
 
+@dataclass
 class GroupOperation(AbstractMessage):
     msg_type: GroupOperationType
     operation: Union[InitMessage, AddMessage, UpdateMessage, RemoveMessage]
@@ -188,16 +189,45 @@ class GroupOperation(AbstractMessage):
         return True
 
     def _pack(self) -> bytes:
-        return pack('Bp',
-                    self.msg_type,
-                    self.operation.pack()
-                    )
+        return pack_dynamic('BV',
+                            self.msg_type,
+                            self.operation.pack()
+                            )
 
     @classmethod
     def from_bytes(cls, data: bytes):
-        pass
+        box: tuple = unpack_dynamic('BV', data)
+
+        group_operation_type: GroupOperationType = GroupOperationType(box[0])
+
+        if group_operation_type == GroupOperationType.ADD:
+            group_operation = AddMessage.from_bytes(data=box[1])
+        elif group_operation_type == GroupOperationType.UPDATE:
+            group_operation = UpdateMessage.from_bytes(data=box[1])
+        elif group_operation_type == GroupOperationType.INIT:
+            raise NotImplementedError()
+        elif group_operation_type == GroupOperationType.REMOVE:
+            raise NotImplementedError()
+        else:
+            raise ValueError()
+
+        # pylint: disable=unexpected-keyword-arg
+        inst: GroupOperation = cls(msg_type=group_operation_type, operation=group_operation)
+
+        if not inst.validate():
+            raise RuntimeError()
+
+        return inst
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+
+        return self.msg_type == other.msg_type and\
+            self.operation == other.operation
 
 
+@dataclass
 class MLSPlaintextHandshake(AbstractMessage):
     confirmation: int
     group_operation: GroupOperation
@@ -206,15 +236,32 @@ class MLSPlaintextHandshake(AbstractMessage):
         return True
 
     def _pack(self) -> bytes:
-        return pack(
-            'pB',
-            self.group_operation.pack(),
+        return pack_dynamic(
+            'IV',
             self.confirmation,
+            self.group_operation.pack()
         )
 
     @classmethod
     def from_bytes(cls, data: bytes):
-        pass
+        box: tuple = unpack_dynamic('IV', data)
+
+        group_op: GroupOperation = GroupOperation.from_bytes(data=box[1])
+
+        # pylint: disable=unexpected-keyword-arg
+        inst: MLSPlaintextHandshake = cls(confirmation=box[0], group_operation=group_op)
+
+        if not inst.validate():
+            raise RuntimeError()
+
+        return inst
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+
+        return self.confirmation == other.confirmation and \
+                self.group_operation == other.group_operation
 
 
 @dataclass
@@ -293,14 +340,40 @@ class MLSPlaintext(AbstractMessage):
     @classmethod
     def from_bytes(cls, data: bytes):
         box: tuple = unpack_dynamic('VIIBVV', data)
+
+        content_bytes = box[4]
+        content_type = ContentType(box[3])
+        if content_type == ContentType.HANDSHAKE:
+            content = MLSPlaintextHandshake.from_bytes(content_bytes)
+        elif content_type == ContentType.APPLICATION:
+            content = MLSPlaintextApplicationData.from_bytes(content_bytes)
+        else:
+            raise RuntimeError()
+
         # pylint: disable=unexpected-keyword-arg
-        inst: MLSPlaintext = cls(group_id=box[0], epoch=box[1], sender=box[2], content_type=box[3], content=box[4],
-                                 signature=box[5])
+        inst: MLSPlaintext = cls(group_id=box[0],
+                                 epoch=box[1],
+                                 sender=box[2],
+                                 content_type=content_type,
+                                 content=content,
+                                 signature=box[5]
+                                 )
 
         if not inst.validate():
             raise RuntimeError()
 
         return inst
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+
+        return self.group_id == other.group_id and \
+                self.epoch == other.epoch and \
+                self.sender == other.sender and \
+                self.content_type == other.content_type and \
+                self.signature == other.signature and \
+                self.content == other.content
 
 
 @dataclass
@@ -320,7 +393,7 @@ class MLSCiphertext(AbstractMessage):
         return pack_dynamic('VIBVVV',
                             self.group_id,
                             self.epoch,
-                            self.content_type,
+                            self.content_type.value,
                             self.sender_data_nounce,
                             self.encrypted_sender_data,
                             self.ciphertext
@@ -328,7 +401,31 @@ class MLSCiphertext(AbstractMessage):
 
     @classmethod
     def from_bytes(cls, data: bytes):
-        pass
+        box: tuple = unpack_dynamic('VIBVVV', data)
+        # pylint: disable=unexpected-keyword-arg
+        inst: MLSCiphertext = cls(group_id=box[0],
+                                  epoch=box[1],
+                                  content_type=ContentType(box[2]),
+                                  sender_data_nounce=box[3],
+                                  encrypted_sender_data=box[4],
+                                  ciphertext=box[5]
+                                  )
+
+        if not inst.validate():
+            raise RuntimeError()
+
+        return inst
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+
+        return self.group_id == other.group_id and \
+               self.epoch == other.epoch and \
+               self.content_type == other.content_type and \
+               self.sender_data_nounce == other.sender_data_nounce and \
+               self.encrypted_sender_data == other.encrypted_sender_data and \
+               self.ciphertext == other.ciphertext
 
 
 @dataclass
