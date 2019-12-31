@@ -4,7 +4,7 @@ from typing import Optional
 from libMLS.libMLS.abstract_application_handler import AbstractApplicationHandler
 from libMLS.libMLS.local_key_store_mock import LocalKeyStoreMock
 from libMLS.libMLS.messages import WelcomeInfoMessage, AddMessage, UpdateMessage, MLSCiphertext, ContentType, \
-    MLSSenderData
+    MLSSenderData, MLSPlaintext, MLSPlaintextApplicationData, MLSPlaintextHandshake, GroupOperation
 from libMLS.libMLS.state import State
 from libMLS.libMLS.group_context import GroupContext
 from libMLS.libMLS.x25519_cipher_suite import X25519CipherSuite
@@ -122,12 +122,77 @@ class Session:
 
         return out
 
+    def encrypt_handshake_message(self, group_op: GroupOperation) -> MLSCiphertext:
+
+        # todo: confirmation
+        # pylint: disable=unexpected-keyword-arg
+        handshake = MLSPlaintextHandshake(confirmation=0, group_operation=group_op)
+
+        # pylint: disable=unexpected-keyword-arg
+        plaintext = MLSPlaintext(
+            group_id=self._state.get_group_context().group_id,
+            epoch=self._state.get_group_context().epoch,
+            content_type=ContentType.HANDSHAKE,
+            sender=self._user_index,
+            signature=b'0',
+            content=handshake
+        )
+
+        # todo: encrypt stuff
+        # pylint: disable=unexpected-keyword-arg
+        encrypted = MLSCiphertext(
+            content_type=ContentType.HANDSHAKE,
+            group_id=plaintext.group_id,
+            epoch=plaintext.epoch,
+            sender_data_nounce=b'0',
+            encrypted_sender_data=b'0',
+            ciphertext=handshake.pack()
+        )
+
+        return encrypted
+
+    def _process_handshake(self, message: MLSCiphertext, handler: AbstractApplicationHandler) -> None:
+        # todo: Usually, this would have to be decrypted right here
+        plain = MLSPlaintext.from_bytes(message.ciphertext)
+
+        if not plain.verify_metadata_from_cipher(message):
+            raise RuntimeError()
+
+        if not isinstance(plain.content, MLSPlaintextHandshake):
+            raise RuntimeError()
+
+        # todo: We most certainly have to perform more checks here
+        operation: GroupOperation = plain.content.group_operation
+
+        if isinstance(operation.operation, AddMessage):
+            self.process_add(operation.operation)
+            handler.on_group_member_added(plain.group_id)
+        elif isinstance(operation.operation, UpdateMessage):
+            # todo: leaf??????
+            # self.process_update(operation.operation)
+            raise RuntimeError()
+        else:
+            raise RuntimeError()
+
+    # pylint: disable=no-self-use
+    def _process_application(self, message: MLSCiphertext, handler: AbstractApplicationHandler) -> None:
+        # todo: Usually, this would have to be decrypted right here
+        plain = MLSPlaintext.from_bytes(message.ciphertext)
+
+        if not plain.verify_metadata_from_cipher(message):
+            raise RuntimeError()
+
+        if not isinstance(plain.content, MLSPlaintextApplicationData):
+            raise RuntimeError()
+
+        handler.on_application_message(plain.content.application_data)
+
     # pylint: disable=no-self-use
     def process_message(self, message: MLSCiphertext, handler: AbstractApplicationHandler) -> None:
         if message.content_type == ContentType.APPLICATION:
-            handler.on_application_message(message.ciphertext)
+            self._process_application(message=message, handler=handler)
         elif message.content_type == ContentType.HANDSHAKE:
-            pass
+            self._process_handshake(message=message, handler=handler)
         else:
             raise RuntimeError()
 

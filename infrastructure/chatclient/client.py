@@ -57,11 +57,11 @@ class Chat:
         self.session = session
 
     @classmethod
-    def from_welcome(cls,chat_users, username, groupname, session, keystore) -> "Chat":
+    def from_welcome(cls, chat_users, username, groupname, session, keystore) -> "Chat":
         return cls(chat_users=chat_users, username=username, groupname=groupname, session=session, keystore=keystore)
 
     @classmethod
-    def from_empty(cls,  username, groupname, keystore):
+    def from_empty(cls, username, groupname, keystore):
         session = libMLS.Session.from_empty(keystore, username, groupname)
         return cls(username=username, groupname=groupname, keystore=keystore, chat_users=[], session=session)
 
@@ -152,7 +152,7 @@ class MLSClient(AbstractApplicationHandler):
         messages: Dict[bytes] = json.loads(response.content)
         for message in messages:
             name = Session.get_groupid_from_cipher(data=message).decode('UTF-8')
-            self.chats[name].session.process_message(message)
+            self.chats[name].session.process_message(message=message, handler=self)
 
     def on_application_message(self, application_data: bytes):
         print(f"Received Message: \n{application_data.decode('UTF-8')}")
@@ -209,8 +209,8 @@ class MLSClient(AbstractApplicationHandler):
 
         WelcomeInfoMessage, AddMessage = chat.session.add_member(user, b'0')
 
+        add_payload = chat.session.encrypt_application_message(AddMessage)
         welcome_payload = WelcomeInfoMessage.pack()
-        add_payload = AddMessage.pack()
 
         self.send_message_to_user(user, welcome_payload.decode('ascii'))
         chat.users.append(User(user))

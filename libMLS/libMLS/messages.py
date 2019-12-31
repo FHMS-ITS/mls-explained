@@ -223,8 +223,8 @@ class GroupOperation(AbstractMessage):
         if not isinstance(other, self.__class__):
             return False
 
-        return self.msg_type == other.msg_type and\
-            self.operation == other.operation
+        return self.msg_type == other.msg_type and \
+               self.operation == other.operation
 
 
 @dataclass
@@ -261,7 +261,7 @@ class MLSPlaintextHandshake(AbstractMessage):
             return False
 
         return self.confirmation == other.confirmation and \
-                self.group_operation == other.group_operation
+               self.group_operation == other.group_operation
 
 
 @dataclass
@@ -369,11 +369,16 @@ class MLSPlaintext(AbstractMessage):
             return False
 
         return self.group_id == other.group_id and \
-                self.epoch == other.epoch and \
-                self.sender == other.sender and \
-                self.content_type == other.content_type and \
-                self.signature == other.signature and \
-                self.content == other.content
+               self.epoch == other.epoch and \
+               self.sender == other.sender and \
+               self.content_type == other.content_type and \
+               self.signature == other.signature and \
+               self.content == other.content
+
+    def verify_metadata_from_cipher(self, encrypted: 'MLSCiphertext'):
+        return self.group_id == encrypted.group_id and \
+               self.epoch == encrypted.epoch and \
+               self.content_type == encrypted.content_type
 
 
 @dataclass
