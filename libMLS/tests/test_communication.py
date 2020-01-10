@@ -1,4 +1,5 @@
 import pytest
+from libMLS.libMLS.abstract_application_handler import AbstractApplicationHandler
 
 from libMLS.libMLS.local_key_store_mock import LocalKeyStoreMock
 from libMLS.libMLS.messages import UpdateMessage, WelcomeInfoMessage, AddMessage
@@ -159,3 +160,39 @@ def test_update_message_serialized():
 
     # but make sure that bob does not know alice's private key
     assert bob_tree.get_node(0).get_private_key() is None
+
+
+class StubHandler(AbstractApplicationHandler):
+
+    def on_application_message(self, application_data: bytes):
+        pass
+
+    def on_group_welcome(self, session):
+        pass
+
+    def on_group_member_added(self, group_id: bytes):
+        pass
+
+
+@pytest.mark.dependency(depends=["test_session_can_be_created_from_welcome"])
+def test_handshake_processing():
+    alice_store = LocalKeyStoreMock('alice')
+    alice_store.register_keypair(b'0', b'0')
+
+    bob_store = LocalKeyStoreMock('bob')
+    bob_store.register_keypair(b'1', b'1')
+
+    # setup session
+    alice_session = Session.from_empty(alice_store, 'alice', 'test')
+    welcome, add = alice_session.add_member('bob', b'1')
+
+    welcome = WelcomeInfoMessage.from_bytes(welcome.pack())
+
+    encrypted_add = alice_session.encrypt_handshake_message(add)
+    bob_session = Session.from_welcome(welcome, bob_store, 'bob')
+    bob_session.process_message(encrypted_add, StubHandler())
+    alice_session.process_message(encrypted_add, StubHandler())
+
+    # assert that both sessions have the same state after adds
+    assert alice_session.get_state().get_tree().get_num_nodes() == 3
+    assert bob_session.get_state().get_tree().get_num_nodes() == 3

@@ -169,7 +169,7 @@ class Session:
             handler.on_group_member_added(plain.group_id)
         elif isinstance(operation.operation, UpdateMessage):
             # todo: leaf??????
-            # self.process_update(operation.operation)
+            self.process_update(leaf_index=plain.sender, update_message=operation.operation)
             raise RuntimeError()
         else:
             raise RuntimeError()

@@ -17,7 +17,7 @@ def main():
     get Message and delegate according to message type
     :return:
     """
-    APP.run("127.0.0.1:5001")
+    APP.run(host="localhost", port=5001)
 
 
 @APP.route('/')
