@@ -1,25 +1,25 @@
 import string
 from typing import Optional
 
-from libMLS.libMLS.abstract_application_handler import AbstractApplicationHandler
-from libMLS.libMLS.local_key_store_mock import LocalKeyStoreMock
-from libMLS.libMLS.messages import WelcomeInfoMessage, AddMessage, UpdateMessage, MLSCiphertext, ContentType, \
+from libMLS.abstract_application_handler import AbstractApplicationHandler
+from libMLS.abstract_keystore import AbstractKeystore
+from libMLS.group_context import GroupContext
+from libMLS.messages import WelcomeInfoMessage, AddMessage, UpdateMessage, MLSCiphertext, ContentType, \
     MLSSenderData, MLSPlaintext, MLSPlaintextApplicationData, MLSPlaintextHandshake, GroupOperation
-from libMLS.libMLS.state import State
-from libMLS.libMLS.group_context import GroupContext
-from libMLS.libMLS.x25519_cipher_suite import X25519CipherSuite
+from libMLS.state import State
+from libMLS.x25519_cipher_suite import X25519CipherSuite
 
 
 class Session:
 
-    def __init__(self, state: State, key_store: LocalKeyStoreMock, user_name: string, user_index: Optional[int]):
+    def __init__(self, state: State, key_store: AbstractKeystore, user_name: string, user_index: Optional[int]):
         self._state: State = state
         self._key_store = key_store
         self._user_name = user_name
         self._user_index: Optional[int] = user_index
 
     @classmethod
-    def from_welcome(cls, welcome: WelcomeInfoMessage, key_store: LocalKeyStoreMock, user_name: string) -> 'Session':
+    def from_welcome(cls, welcome: WelcomeInfoMessage, key_store: AbstractKeystore, user_name: string) -> 'Session':
         context: GroupContext = GroupContext(
             group_id=welcome.group_id,
             epoch=welcome.epoch,
@@ -34,7 +34,7 @@ class Session:
 
     # todo: Use user_credentials
     @classmethod
-    def from_empty(cls, key_store: LocalKeyStoreMock, user_name: string, group_name: string) -> 'Session':
+    def from_empty(cls, key_store: AbstractKeystore, user_name: string, group_name: string) -> 'Session':
 
         empty_context: GroupContext = GroupContext(
             group_id=group_name.encode('ascii'),
@@ -107,17 +107,29 @@ class Session:
 
     def encrypt_application_message(self, message: str) -> MLSCiphertext:
 
+        # todo: fix this shait :
+
         # pylint: disable=unexpected-keyword-arg
         sender_data = MLSSenderData(sender=self._user_index, generation=0)
 
         # pylint: disable=unexpected-keyword-arg
-        out = MLSCiphertext(
+        plaintext = MLSPlaintext(
             group_id=self._state.get_group_context().group_id,
             epoch=self._state.get_group_context().epoch,
             content_type=ContentType.APPLICATION,
+            sender=self._user_index,
+            signature=b'0',
+            content=MLSPlaintextApplicationData(application_data=message.encode('UTF-8'))
+        )
+
+        # pylint: disable=unexpected-keyword-arg
+        out = MLSCiphertext(
+            content_type=ContentType.APPLICATION,
+            group_id=plaintext.group_id,
+            epoch=plaintext.epoch,
             sender_data_nounce=b'0',
             encrypted_sender_data=sender_data.pack(),
-            ciphertext=message.encode('UTF-8')
+            ciphertext=plaintext.pack()
         )
 
         return out

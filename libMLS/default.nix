@@ -11,7 +11,7 @@ let
     overriddenCryptography = pkgs.python37Packages.cryptography.override {
         openssl= pkgs.openssl_1_1;
     };
-    nativePythonPackages = with pkgs.python37Packages; [flask];
+    nativePythonPackages = with pkgs.python37Packages; [flask pytestrunner];
     customPythonPackages =  [ overriddenCryptography ];
     output = pkgs.python37Packages.buildPythonApplication rec {
 
@@ -21,11 +21,13 @@ let
         src = ./.;
 
         propagatedBuildInputs = builtins.concatLists [ nativePythonPackages customPythonPackages ];
-        checkInputs = with pkgs.python37Packages; [ pytest pylint pytestcov pytest-dependency];
+        checkInputs = with pkgs.python37Packages; [ pytest pylint pytestcov pytest-dependency pytest-pylint];
 
-      checkPhase = ''
-        mkdir -p $out/logs
-        PYLINTRC=$src/.pylintrc py.test -s --cov=$pname tests | tee $out/logs/test.log
-      '';
+        preCheck = ''
+        export PYLINTRC=$src/.pylintrc;
+        export PYLINTHOME=$out
+        '';
+
+      #doCheck = false;
     };
 in output

@@ -15,12 +15,13 @@ let
 
         src = ./.;
 
-        propagatedBuildInputs = [ python37Packages.flask python37Packages.requests libMLS ];
-        checkInputs = with python37Packages; [ pytest pylint pytestcov ];
+        propagatedBuildInputs = with python37Packages; [ flask requests libMLS pytestrunner ];
+        checkInputs = with python37Packages; [ pytest pylint pytest-pylint pytestcov ];
 
-        checkPhase = ''
-            PYLINTRC=$src/.pylintrc py.test -s --cov=$pname tests
-         '';
+        preCheck = ''
+        export PYLINTRC=$src/.pylintrc;
+        export PYLINTHOME=$out
+        '';
 
     };
 in output

@@ -15,8 +15,7 @@ class Store(ABC):
     def __init__(self, file_name: str):
         super().__init__()
         self.file_name = file_name
-        path = str(os.path.dirname(os.path.realpath(__file__)))
-        self.absolute_file_path = path + "/" +str(file_name)
+        self.absolute_file_path = os.path.abspath(file_name)
         self.elements = []
         self.load_from_file()
 

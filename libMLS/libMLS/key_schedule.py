@@ -1,8 +1,8 @@
 from typing import Optional
 
-from libMLS.libMLS.crypto import derive_secret, hkdf_extract
-from libMLS.libMLS.group_context import GroupContext
-from libMLS.libMLS.cipher_suite import CipherSuite
+from libMLS.crypto import derive_secret, hkdf_extract
+from libMLS.group_context import GroupContext
+from libMLS.cipher_suite import CipherSuite
 
 
 # pylint: disable=too-many-instance-attributes

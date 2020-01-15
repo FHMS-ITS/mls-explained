@@ -1,6 +1,6 @@
-from libMLS.libMLS.tree_node import TreeNode
-from libMLS.libMLS.tree import Tree
-from libMLS.libMLS.x25519_cipher_suite import X25519CipherSuite
+from libMLS.tree_node import TreeNode
+from libMLS.tree import Tree
+from libMLS.x25519_cipher_suite import X25519CipherSuite
 
 
 def test_node_can_be_added_to_empty_tree():

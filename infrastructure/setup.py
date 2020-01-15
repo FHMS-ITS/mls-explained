@@ -14,5 +14,7 @@ setup(
             'mls-dir-server = dirserver.server:main',
             'mls-chat-client = chatclient.client:main'
         ]
-    }
+    },
+    setup_requires=['pytest-runner'],
+    tests_require=['pytest', 'pytest-pylint', 'pylint'],
 )

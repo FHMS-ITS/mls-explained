@@ -1,8 +1,8 @@
 import string
 from typing import Dict, Optional
 
-from libMLS.libMLS.abstract_keystore import AbstractKeystore
-from libMLS.libMLS.remote_key_store_mock import RemoteKeyStoreMock
+from libMLS.abstract_keystore import AbstractKeystore
+from libMLS.remote_key_store_mock import RemoteKeyStoreMock
 
 
 class LocalKeyStoreMock(AbstractKeystore):

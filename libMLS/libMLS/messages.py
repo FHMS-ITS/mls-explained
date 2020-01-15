@@ -7,9 +7,9 @@ from struct import pack
 from enum import Enum
 from typing import Union, List
 
-from libMLS.libMLS.abstract_message import AbstractMessage
-from libMLS.libMLS.message_packer import pack_dynamic, unpack_dynamic, unpack_byte_list
-from libMLS.libMLS.tree_node import TreeNode
+from libMLS.abstract_message import AbstractMessage
+from libMLS.message_packer import pack_dynamic, unpack_dynamic, unpack_byte_list
+from libMLS.tree_node import TreeNode
 
 
 class ContentType(Enum):
@@ -272,18 +272,26 @@ class MLSPlaintextApplicationData(AbstractMessage):
         return True
 
     def _pack(self) -> bytes:
-        return pack_dynamic('v', self.application_data)
+        # return pack_dynamic('V', self.application_data)
+        return self.application_data
 
     @classmethod
     def from_bytes(cls, data: bytes):
-        box: tuple = unpack_dynamic('V', data)
+        # box: tuple = unpack_dynamic('V', data)
         # pylint: disable=unexpected-keyword-arg
-        inst: MLSPlaintextApplicationData = cls(application_data=box[0])
+        # inst: MLSPlaintextApplicationData = cls(application_data=box[0])
+        inst: MLSPlaintextApplicationData = cls(application_data=data)
 
         if not inst.validate():
             raise RuntimeError()
 
         return inst
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+
+        return self.application_data == other.application_data
 
 
 @dataclass
@@ -311,6 +319,12 @@ class MLSSenderData(AbstractMessage):
             self.sender,
             self.generation
         )
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+
+        return self.sender == other.sender and self.generation == other.generation
 
 
 @dataclass

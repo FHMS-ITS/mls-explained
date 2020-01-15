@@ -2,15 +2,15 @@ import os
 
 from typing import Optional, List
 
-from libMLS.libMLS.cipher_suite import CipherSuite
-from libMLS.libMLS.crypto import hkdf_expand_label
-from libMLS.libMLS.group_context import GroupContext
-from libMLS.libMLS.key_schedule import KeySchedule, advance_epoch
-from libMLS.libMLS.tree_math import parent, direct_path, sibling, copath, resolve
-from libMLS.libMLS.tree_node import TreeNode
-from libMLS.libMLS.messages import WelcomeInfoMessage, AddMessage, UpdateMessage, DirectPathNode, HPKECiphertext
-from libMLS.libMLS.tree import Tree
-from libMLS.libMLS.x25519_cipher_suite import X25519CipherSuite
+from libMLS.cipher_suite import CipherSuite
+from libMLS.crypto import hkdf_expand_label
+from libMLS.group_context import GroupContext
+from libMLS.key_schedule import KeySchedule, advance_epoch
+from libMLS.tree_math import parent, direct_path, sibling, copath, resolve
+from libMLS.tree_node import TreeNode
+from libMLS.messages import WelcomeInfoMessage, AddMessage, UpdateMessage, DirectPathNode, HPKECiphertext
+from libMLS.tree import Tree
+from libMLS.x25519_cipher_suite import X25519CipherSuite
 
 
 class State:

@@ -1,9 +1,9 @@
 import pytest
-from libMLS.libMLS.abstract_application_handler import AbstractApplicationHandler
+from libMLS.abstract_application_handler import AbstractApplicationHandler
 
-from libMLS.libMLS.local_key_store_mock import LocalKeyStoreMock
-from libMLS.libMLS.messages import UpdateMessage, WelcomeInfoMessage, AddMessage
-from libMLS.libMLS.session import Session
+from libMLS.local_key_store_mock import LocalKeyStoreMock
+from libMLS.messages import UpdateMessage, WelcomeInfoMessage, AddMessage
+from libMLS.session import Session
 
 
 def test_key_store_mock_works():

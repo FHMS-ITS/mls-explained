@@ -1,9 +1,9 @@
 from typing import Optional
 from dataclasses import dataclass
 
-from libMLS.libMLS.abstract_message import AbstractMessage
-from libMLS.libMLS.cipher_suite import CipherSuite
-from libMLS.libMLS.message_packer import pack_dynamic, unpack_dynamic
+from libMLS.abstract_message import AbstractMessage
+from libMLS.cipher_suite import CipherSuite
+from libMLS.message_packer import pack_dynamic, unpack_dynamic
 
 
 @dataclass

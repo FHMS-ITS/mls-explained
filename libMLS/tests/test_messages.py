@@ -3,9 +3,10 @@ import os
 
 import pytest
 
-from libMLS.libMLS.messages import UpdateMessage, DirectPathNode, HPKECiphertext, WelcomeInfoMessage, AddMessage, \
-    MLSCiphertext, ContentType, MLSPlaintext, MLSPlaintextHandshake, GroupOperation, GroupOperationType
-from libMLS.libMLS.tree_node import TreeNode
+from libMLS.messages import UpdateMessage, DirectPathNode, HPKECiphertext, WelcomeInfoMessage, AddMessage, \
+    MLSCiphertext, ContentType, MLSPlaintext, MLSPlaintextHandshake, GroupOperation, GroupOperationType, \
+    MLSPlaintextApplicationData
+from libMLS.tree_node import TreeNode
 
 
 def test_update_message():
@@ -118,6 +119,21 @@ def test_plaintext_message():
         sender=42,
         signature=b'steffensoddemann',
         content=handshake
+    )
+
+    assert MLSPlaintext.from_bytes(message.pack()) == message
+
+
+def test_plaintext_application_message():
+    app = MLSPlaintextApplicationData(application_data=b'abcdabcd')
+
+    message = MLSPlaintext(
+        group_id=b'helloworld',
+        epoch=1337,
+        content_type=ContentType.APPLICATION,
+        sender=42,
+        signature=b'steffensoddemann',
+        content=app
     )
 
     assert MLSPlaintext.from_bytes(message.pack()) == message

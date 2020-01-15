@@ -1,7 +1,7 @@
 from math import ceil
 from typing import List, Optional
 
-from libMLS.libMLS.tree_node import TreeNode
+from libMLS.tree_node import TreeNode
 from .tree_math import parent, level, root, left, right, is_leaf
 from .cipher_suite import CipherSuite
 from .tree_node import LeafNodeHashInput, LeafNodeInfo, ParentNodeHashInput
