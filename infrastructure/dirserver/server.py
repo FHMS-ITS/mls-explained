@@ -73,13 +73,13 @@ def message_fanout():
     Do a Message Fanout to all Receivers of the message
     """
     data = json.loads(request.data)
-    print(data)
     try:
         receivers = data["receivers"]
         message = data["message"]
         for receiver in receivers:
-            message = Message(receiver["user"], receiver["device"], message)
-            MESSAGESTORE.add_element(message)
+            jans_gutes_message_object = Message(receiver["user"], receiver["device"], message)
+            MESSAGESTORE.add_element(jans_gutes_message_object)
+        print(len(MESSAGESTORE.elements))
         return "OK", 200
     except KeyError:
         return "Post has wrong format", 400
@@ -96,13 +96,11 @@ def get_messages():
         found_messages = MESSAGESTORE.get_messages(requested_user, requested_device)
         found_messages_json = []
         for message in found_messages:
-            # print(message)
+            print(message)
             found_messages_json.append(message.to_json())
-            return json.dumps(found_messages_json), 200
+        return json.dumps(found_messages_json), 200
     except KeyError:
         return "Get has wrong format", 400
-
-    return json.dumps([]), 200
 
 
 if __name__ == '__main__':

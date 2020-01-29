@@ -158,13 +158,14 @@ class Session:
             epoch=plaintext.epoch,
             sender_data_nounce=b'0',
             encrypted_sender_data=b'0',
-            ciphertext=handshake.pack()
+            ciphertext=plaintext.pack()
         )
 
         return encrypted
 
     def _process_handshake(self, message: MLSCiphertext, handler: AbstractApplicationHandler) -> None:
         # todo: Usually, this would have to be decrypted right here
+        print(f"processing mls ciphertext, len {len(message.ciphertext)}: {message.ciphertext}")
         plain = MLSPlaintext.from_bytes(message.ciphertext)
 
         if not plain.verify_metadata_from_cipher(message):
@@ -197,7 +198,7 @@ class Session:
         if not isinstance(plain.content, MLSPlaintextApplicationData):
             raise RuntimeError()
 
-        handler.on_application_message(plain.content.application_data)
+        handler.on_application_message(plain.content.application_data, plain.group_id.decode('ASCII'))
 
     # pylint: disable=no-self-use
     def process_message(self, message: MLSCiphertext, handler: AbstractApplicationHandler) -> None:

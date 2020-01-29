@@ -2,9 +2,8 @@
 Refer to RFC-8446 https://tools.ietf.org/html/rfc8446#section-3.4
 """
 from dataclasses import dataclass
-from struct import pack
-
 from enum import Enum
+from struct import pack
 from typing import Union, List
 
 from libMLS.abstract_message import AbstractMessage
@@ -190,9 +189,24 @@ class GroupOperation(AbstractMessage):
 
     def _pack(self) -> bytes:
         return pack_dynamic('BV',
-                            self.msg_type,
+                            self.msg_type.value,
                             self.operation.pack()
                             )
+
+    @classmethod
+    def from_instance(cls, group_operation: Union[InitMessage, AddMessage, UpdateMessage, RemoveMessage]):
+
+        if isinstance(group_operation, AddMessage):
+            op_type = GroupOperationType.ADD
+        elif isinstance(group_operation, RemoveMessage):
+            op_type = GroupOperationType.REMOVE
+        elif isinstance(group_operation, UpdateMessage):
+            op_type = GroupOperationType.UPDATE
+        else:
+            raise ValueError()
+
+        # pylint: disable=unexpected-keyword-arg
+        return cls(operation=group_operation, msg_type=op_type)
 
     @classmethod
     def from_bytes(cls, data: bytes):
@@ -233,7 +247,7 @@ class MLSPlaintextHandshake(AbstractMessage):
     group_operation: GroupOperation
 
     def validate(self) -> bool:
-        return True
+        return isinstance(self.group_operation, GroupOperation)
 
     def _pack(self) -> bytes:
         return pack_dynamic(
@@ -272,15 +286,14 @@ class MLSPlaintextApplicationData(AbstractMessage):
         return True
 
     def _pack(self) -> bytes:
-        # return pack_dynamic('V', self.application_data)
-        return self.application_data
+        return pack_dynamic('V', self.application_data)
+        # return self.application_data
 
     @classmethod
     def from_bytes(cls, data: bytes):
-        # box: tuple = unpack_dynamic('V', data)
+        box: tuple = unpack_dynamic('V', data)
         # pylint: disable=unexpected-keyword-arg
-        # inst: MLSPlaintextApplicationData = cls(application_data=box[0])
-        inst: MLSPlaintextApplicationData = cls(application_data=data)
+        inst: MLSPlaintextApplicationData = cls(application_data=box[0])
 
         if not inst.validate():
             raise RuntimeError()
@@ -346,7 +359,7 @@ class MLSPlaintext(AbstractMessage):
             self.group_id,
             self.epoch,
             self.sender,
-            self.content_type,
+            self.content_type.value,
             self.content.pack(),
             self.signature
         )

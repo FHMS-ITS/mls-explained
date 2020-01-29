@@ -2,7 +2,7 @@ import pytest
 from libMLS.abstract_application_handler import AbstractApplicationHandler
 
 from libMLS.local_key_store_mock import LocalKeyStoreMock
-from libMLS.messages import UpdateMessage, WelcomeInfoMessage, AddMessage
+from libMLS.messages import UpdateMessage, WelcomeInfoMessage, AddMessage, GroupOperation
 from libMLS.session import Session
 
 
@@ -174,7 +174,6 @@ class StubHandler(AbstractApplicationHandler):
         pass
 
 
-@pytest.mark.dependency(depends=["test_session_can_be_created_from_welcome"])
 def test_handshake_processing():
     alice_store = LocalKeyStoreMock('alice')
     alice_store.register_keypair(b'0', b'0')
@@ -188,7 +187,8 @@ def test_handshake_processing():
 
     welcome = WelcomeInfoMessage.from_bytes(welcome.pack())
 
-    encrypted_add = alice_session.encrypt_handshake_message(add)
+    encrypted_add = alice_session.encrypt_handshake_message(GroupOperation.from_instance(add))
+
     bob_session = Session.from_welcome(welcome, bob_store, 'bob')
     bob_session.process_message(encrypted_add, StubHandler())
     alice_session.process_message(encrypted_add, StubHandler())
@@ -196,3 +196,5 @@ def test_handshake_processing():
     # assert that both sessions have the same state after adds
     assert alice_session.get_state().get_tree().get_num_nodes() == 3
     assert bob_session.get_state().get_tree().get_num_nodes() == 3
+
+

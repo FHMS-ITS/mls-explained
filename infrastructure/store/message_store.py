@@ -3,6 +3,8 @@ Keystore Class zum Storen von Keys in Dateien.
 """
 from dataclasses import dataclass
 from datetime import datetime
+from typing import List
+
 from store.store import Store
 
 
@@ -88,7 +90,7 @@ class Messagestore(Store):
         element.timestamp = datetime.now()
         self.elements.append(element)
 
-    def get_messages(self, user: str, device: str):
+    def get_messages(self, user: str, device: str) -> List[Message]:
         """
         gets all messages for a given user device
         for server use
