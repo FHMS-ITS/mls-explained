@@ -106,14 +106,12 @@ class MLSClient(AbstractApplicationHandler):
         for some_user in chat.users:
             all_users.append({"user": some_user.name, "device": some_user.devices[0]})
 
-        print(f"Sending message to users [{';'.join([u.name for u in chat.users])}]")
+        # print(f"Sending message to users [{';'.join([u.name for u in chat.users])}]")
 
         if message is not None:
             encrypted_message = chat.session.encrypt_application_message(message=message)
         else:
             encrypted_message = chat.session.encrypt_handshake_message(group_op=handshake)
-            print(f"Sending encrypted handshake with len "
-                  f"{len(encrypted_message.ciphertext)}: {encrypted_message.ciphertext}")
 
         message_data = json.dumps(
             {
@@ -123,7 +121,7 @@ class MLSClient(AbstractApplicationHandler):
         )
         response = requests.post("http://" + self.dir_server + "/message",
                                  data=message_data)
-        print(response.text)
+        # print(response.text)
 
     def get_messages(self, user: str, device: str):
         """
@@ -133,7 +131,7 @@ class MLSClient(AbstractApplicationHandler):
         params = {"user": user, "device": device}
         response = requests.get("http://" + self.dir_server + "/message", params=params)
 
-        print(response.content)
+        # print(response.content)
 
         if response.status_code != 200:
             raise RuntimeError(f'GetMessage status code {response.status_code}')
@@ -158,7 +156,7 @@ class MLSClient(AbstractApplicationHandler):
             self.chats[name].session.process_message(message=MLSCiphertext.from_bytes(message_content), handler=self)
 
     def on_application_message(self, application_data: bytes, group_id: str):
-        print(f"Received Message in Group{group_id}: \n{application_data.decode('UTF-8')}")
+        print(f"Received Message in Group {group_id}:\n{application_data.decode('UTF-8')}")
 
     def on_group_welcome(self, session: Session):
         group_name = session.get_state().get_group_context().group_id.decode('ASCII')

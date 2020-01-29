@@ -165,7 +165,6 @@ class Session:
 
     def _process_handshake(self, message: MLSCiphertext, handler: AbstractApplicationHandler) -> None:
         # todo: Usually, this would have to be decrypted right here
-        print(f"processing mls ciphertext, len {len(message.ciphertext)}: {message.ciphertext}")
         plain = MLSPlaintext.from_bytes(message.ciphertext)
 
         if not plain.verify_metadata_from_cipher(message):
