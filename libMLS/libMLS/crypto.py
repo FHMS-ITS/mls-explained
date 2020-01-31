@@ -7,8 +7,8 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.hkdf import HKDFExpand, HKDF
 
-from libMLS.libMLS.cipher_suite import CipherSuite
-from libMLS.libMLS.group_context import GroupContext
+from libMLS.cipher_suite import CipherSuite
+from libMLS.group_context import GroupContext
 
 
 @dataclass

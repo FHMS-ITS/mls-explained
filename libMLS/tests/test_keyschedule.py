@@ -1,6 +1,6 @@
-from libMLS.libMLS.key_schedule import KeySchedule
-from libMLS.libMLS.group_context import GroupContext
-from libMLS.libMLS.x25519_cipher_suite import X25519CipherSuite
+from libMLS.key_schedule import KeySchedule
+from libMLS.group_context import GroupContext
+from libMLS.x25519_cipher_suite import X25519CipherSuite
 
 
 def test_new_keyschedule():

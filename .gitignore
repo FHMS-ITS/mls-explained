@@ -1,4 +1,7 @@
 
+**/init_key_store.json
+**/message_store.json
+
 #ignore nix results
 **/result
 **/result-2

@@ -8,3 +8,12 @@ build_infrastructure:
   stage: build
   script:
     - nix-build default.nix
+
+integration_test:
+  stage: test
+  dependencies:
+    - build_infrastructure
+  script:
+    - cd ./integration_test
+    - nix-build default.nix
+    - ./result

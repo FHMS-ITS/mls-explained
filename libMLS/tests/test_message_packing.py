@@ -4,7 +4,7 @@ from typing import List, Dict
 
 import pytest
 
-from libMLS.libMLS.message_packer import pack_dynamic, MP_LENGTH_FIELD_SIZE, DynamicPackingException, \
+from libMLS.message_packer import pack_dynamic, MP_LENGTH_FIELD_SIZE, DynamicPackingException, \
     unpack_dynamic, unpack_byte_list, MP_BYTE_ORDERING
 
 

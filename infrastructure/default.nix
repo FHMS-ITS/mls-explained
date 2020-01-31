@@ -1,19 +1,27 @@
-# special thanks to tfc for the inspiration https://github.com/tfc/nix_cmake_example/blob/master/release.nix
-
 {
-  nixpkgs ? null
+    nixpkgs ? null,
+    libMLS ? import ../libMLS/default.nix {}
 }:
 
 let
     pkgs = import ../pinned-nixpkgs.nix{inherit nixpkgs;};
 in
-    with pkgs;
+   with pkgs;
 let
-    dirserver = import ./dirserver/default.nix  {inherit nixpkgs;};
-    integration_test = import ./integration-tests.nix {inherit nixpkgs;};
 
-# symlink join merges two derivations
-in symlinkJoin {
-    name ="mls-infrastructure";
-    paths = [ dirserver ];
-}
+    output = python37Packages.buildPythonApplication rec {
+        pname = "infrastructure";
+        version = "0.1";
+
+        src = ./.;
+
+        propagatedBuildInputs = with python37Packages; [ flask requests libMLS pytestrunner ];
+        checkInputs = with python37Packages; [ pytest pylint pytest-pylint pytestcov ];
+
+        preCheck = ''
+        export PYLINTRC=$src/.pylintrc;
+        export PYLINTHOME=$out
+        '';
+
+    };
+in output

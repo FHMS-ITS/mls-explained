@@ -7,7 +7,7 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives.hashes import Hash
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
-from libMLS.libMLS.cipher_suite import CipherSuite
+from libMLS.cipher_suite import CipherSuite
 
 
 class X25519CipherSuite(CipherSuite):
