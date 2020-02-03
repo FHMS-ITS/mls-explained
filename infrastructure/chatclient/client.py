@@ -6,14 +6,14 @@ import json
 from typing import List, Dict, Optional
 
 import requests
+
+from libMLS.abstract_application_handler import AbstractApplicationHandler
 from libMLS.messages import WelcomeInfoMessage, MLSCiphertext, GroupOperation
 from libMLS.session import Session
-from libMLS.abstract_application_handler import AbstractApplicationHandler
 
 from chatclient.chat import Chat
-from chatclient.user import User
 from chatclient.key_service import KeyService
-
+from chatclient.user import User
 
 def check_auth_server(ip_address: str) -> bool:
     """
@@ -224,6 +224,9 @@ class MLSClient(AbstractApplicationHandler):
                 return chat.users
         return []
 
+    def dump_state_image(self, group_name: str):
+        self.chats[group_name].dumper.dump_next_state()
+
 
 class Menu:
 
@@ -268,6 +271,10 @@ class Menu:
         if menu_item == 7:
             # Remove member
             pass
+        if menu_item == 8:
+            group_name = input("Group Name:").strip()
+            self.client.dump_state_image(group_name=group_name)
+
 
 
 def parse_arguments():
@@ -286,6 +293,7 @@ def print_main_menu():
     print("5) Create Group")
     print("6) Add Member")
     print("7) Remove Member")
+    print("8) Dump state")
     print("99) Exit")
     print("+++++++++++++++++++++++++++++++++")
 

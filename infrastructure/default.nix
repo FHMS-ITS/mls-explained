@@ -24,4 +24,13 @@ let
         '';
 
     };
-in output
+
+in pkgs.symlinkJoin {
+  name = "mls-infrastructure-wrapped";
+  paths = [ output ];
+  buildInputs = [ makeWrapper ];
+  postBuild = ''
+    wrapProgram $out/bin/mls-chat-client \
+      --prefix PATH : ${graphviz}/bin
+  '';
+}
