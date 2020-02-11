@@ -101,10 +101,22 @@ echo 2 > bob
 
 sleep 2
 
-echo "Sending app message..."
+echo "Sending app message from alice to bob..."
 # write something
 echo 1 > alice
 echo -e "mygroup\nhello world">alice
+
+sleep 2
+
+echo "Pulling app message..."
+# pull updates
+echo 2 > alice
+echo 2 > bob
+
+echo "Sending app message from bob to alice..."
+# write something
+echo 1 > bob
+echo -e "mygroup\nhello alice">bob
 
 sleep 2
 

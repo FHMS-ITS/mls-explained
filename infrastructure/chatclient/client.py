@@ -15,6 +15,9 @@ from chatclient.chat import Chat
 from chatclient.key_service import KeyService
 from chatclient.user import User
 
+from .chat_protocol import ChatProtocolMessage, ChatMessage, ChatUserListMessage, ChatProtocolMessageType
+
+
 def check_auth_server(ip_address: str) -> bool:
     """
     checks a given ip_address for a running MLS Auth Server
@@ -44,12 +47,6 @@ class MLSClient(AbstractApplicationHandler):
         self.device = device
         self.chats: Dict[str, Chat] = {}
         self.keystore = KeyService(user, dir_server)
-
-    def add_contact(self, user: str, device: str):
-        """
-        #TODO: Rename app_add_contact
-        creates and adds chat for single user
-        """
 
     def get_auth_key(self, user: str, device: str):
         """
@@ -85,7 +82,7 @@ class MLSClient(AbstractApplicationHandler):
 
     def send_message_to_group(self,
                               group_name: str,
-                              message: Optional[str] = None,
+                              message: Optional[bytes] = None,
                               handshake: Optional[GroupOperation] = None):
         """
         Sends message to dirserver to do serverside fanout
@@ -156,7 +153,25 @@ class MLSClient(AbstractApplicationHandler):
             self.chats[name].session.process_message(message=MLSCiphertext.from_bytes(message_content), handler=self)
 
     def on_application_message(self, application_data: bytes, group_id: str):
-        print(f"Received Message in Group {group_id}:\n{application_data.decode('UTF-8')}")
+        msg = ChatProtocolMessage.from_bytes(application_data)
+
+        if isinstance(msg.contents, ChatMessage):
+            print(f"Received Message in Group {group_id}:\n{msg.contents.message}")
+        elif isinstance(msg.contents, ChatUserListMessage):
+            self.chats[group_id].users = [User(name) for name in msg.contents.user_names]
+            print(f"Updated members of group {group_id}: {';'.join([user.name for user in self.chats[group_id].users])}")
+        else:
+            raise RuntimeError()
+
+    def send_chat_message(self, message: str, group_id: str):
+        # pylint: disable=unexpected-keyword-arg
+        name_update_msg = ChatProtocolMessage(
+            msg_type=ChatProtocolMessageType.MESSAGE,
+            contents=ChatMessage(message=message)
+        )
+
+        self.send_message_to_group(group_name=group_id, message=name_update_msg.pack())
+
 
     def on_group_welcome(self, session: Session):
         group_name = session.get_state().get_group_context().group_id.decode('ASCII')
@@ -215,6 +230,14 @@ class MLSClient(AbstractApplicationHandler):
         chat.users.append(User(user))
         self.send_message_to_group(group_name=group_name, handshake=group_op)
 
+        # pylint: disable=unexpected-keyword-arg
+        name_update_msg = ChatProtocolMessage(
+            msg_type=ChatProtocolMessageType.USER_LIST,
+            contents=ChatUserListMessage(user_names=[user.name for user in chat.users])
+        )
+
+        self.send_message_to_group(group_name=group_name, message=name_update_msg.pack())
+
     def get_recievers(self, chat_identifier: str) -> List[User]:
         """
         returns all receivers in a given chat
@@ -247,7 +270,7 @@ class Menu:
             receiver = input("Enter Groupname:")
             if receiver != "":
                 message = input("Enter Message:")
-                self.client.send_message_to_group(receiver, message=message)
+                self.client.send_chat_message(message=message, group_id=receiver)
                 return
             print("No Receiver found")
         if menu_item == 2:
