@@ -7,8 +7,9 @@ let
   {
     owner = "NixOS";
     repo = "nixpkgs";
-    rev = "58fb23f72ad916c8bbfa3c3bc2d0c83c9cfcdd16";
-    sha256 =  "0f7gnsis5hdrdcmiv7s06qz02pszmmfxrqvc77jf0lmc86i25x9i";
+    rev = "1fe82110febdf005d97b2927610ee854a38a8f26";
+    sha256 = "08x6saa7iljyq2m0j6p9phy0v17r3p8l7vklv7y7gvhdc7a85ppi";
+
   };
   url = "https://github.com/${spec.owner}/${spec.repo}/archive/${spec.rev}.tar.gz";
 
