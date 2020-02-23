@@ -125,6 +125,25 @@ echo "Pulling app message..."
 echo 2 > alice
 echo 2 > bob
 
+sleep 2
+
+echo "Alice updates keys ..."
+echo 7 > alice
+echo -e "mygroup">alice
+
+sleep 2
+
+echo "Pulling messages..."
+# pull updates
+echo 2 > alice
+echo 2 > bob
+
+sleep 2
+
+echo "Checking that the processes still live ..."
+kill -0 $BOB_PID
+kill -0 $ALICE_PID
+
 echo "Terminating clients..."
 # terminate both clients
 echo 99 > bob

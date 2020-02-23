@@ -27,9 +27,9 @@ class DotDumper:
         for index, node in enumerate(nodes):
             dot_contents += f"{_node_to_dot(node,index)}[style=filled fillcolor=transparent];\n"
 
-            parent_node = parent(index, len(nodes)-1)
+            parent_node = parent(index, len(nodes))
 
-            if parent_node != index:
+            if parent_node != index and parent_node < len(nodes):
                 dot_contents += f"\t{_node_to_dot(node, index)} -> {_node_to_dot(nodes[parent_node], parent_node)};\n"
 
         dot_contents += "}"
@@ -38,7 +38,7 @@ class DotDumper:
     def print_dot_state(self):
         print(self.dump_state_dot())
 
-    def dump_dot_to_file(self, overwrite_path: Optional[str] = None):
+    def dump_dot_to_file(self, overwrite_path: Optional[str] = None) -> str:
         dot_source = self.dump_state_dot()
 
         if overwrite_path is None:
@@ -49,7 +49,10 @@ class DotDumper:
         with open(overwrite_path, 'w') as tmp_file:
             tmp_file.write(svg_data.decode('utf-8'))
 
-    def dump_next_state(self):
+        return overwrite_path
 
-        path = self._img_dir + f'/state{str(self._num_dumped).rjust(3, "0")}'
-        self.dump_dot_to_file(path)
+    def dump_next_state(self) -> str:
+
+        path = self._img_dir + f'/state{str(self._num_dumped).rjust(3, "0")}.svg'
+        self._num_dumped += 1
+        return self.dump_dot_to_file(path)

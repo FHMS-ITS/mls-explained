@@ -6,6 +6,10 @@ import requests
 from libMLS.abstract_keystore import AbstractKeystore
 
 
+class NoKeysAvailableException(Exception):
+    pass
+
+
 class KeyService(AbstractKeystore):
 
     def __init__(self, user_name: str, dir_server_url: str):
@@ -22,13 +26,12 @@ class KeyService(AbstractKeystore):
         else:
             raise RuntimeError("Failed to store key at server")
 
-
     def fetch_init_key(self, user_name: str) -> Optional[bytes]:
         params = {"user": user_name}
         response = requests.get("http://" + self._dir_server_url + "/keys", params=params)
 
         if response.status_code != 200:
-            raise RuntimeError("No keys available")
+            raise NoKeysAvailableException()
 
         return bytes.fromhex(json.loads(response.content))
 
@@ -37,3 +40,17 @@ class KeyService(AbstractKeystore):
             return self._private_public_map[public_key]
 
         return None
+
+    def is_available(self) -> bool:
+        try:
+            requests.get("http://" + self._dir_server_url + "/keys", timeout=2)
+        except requests.exceptions.Timeout:
+            return False
+        except requests.exceptions.ConnectionError:
+            return False
+
+        return True
+
+    def clear_data(self, user_name: str, device_name: str) -> None:
+        params = {"user": user_name, "device": device_name}
+        requests.delete("http://" + self._dir_server_url + "/clear_information", params=params)

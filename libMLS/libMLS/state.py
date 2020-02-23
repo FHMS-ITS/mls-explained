@@ -242,7 +242,7 @@ class State:
         # nicht unseren tree borken. Gerade erstzen wir das leaf secret sofort, wenn die update nachricht dann
         # resequenced wird ist der updatende client raus. MLSpp von cisco hat das gleiche problem.
 
-        nodes_in_copath = copath(leaf_index, self._tree.get_num_leaves())
+        nodes_in_copath = copath(leaf_index*2, self._tree.get_num_leaves())
         nodes_out: List[DirectPathNode] = []
         # Corresponds to X=path_secret[0]
         path_secret = os.urandom(16)
@@ -256,7 +256,7 @@ class State:
                                                                                       cipher_suite=self._cipher_suite))
         # Pylint currently has a problem with dataclasses
         # pylint: disable=unexpected-keyword-arg
-        nodes_out.append(DirectPathNode(public_key=self._tree.get_node(leaf_index).get_public_key(),
+        nodes_out.append(DirectPathNode(public_key=self._tree.get_node(leaf_index*2).get_public_key(),
                                         encrypted_path_secret=[]))
 
         last_path_secret = None
