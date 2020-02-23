@@ -179,6 +179,10 @@ class Session:
         :param message: the message to encrypt
         :return: the encrypted MLSCiphertext object
         """
+        if self._user_index is None:
+            raise RuntimeError("User index is None. This typically happens, whenever we do not have the private"
+                               "key for a public key which is used to create a group, even though we should"
+                               "have it.")
 
         # pylint: disable=unexpected-keyword-arg
         sender_data = MLSSenderData(sender=self._user_index, generation=0)
