@@ -12,12 +12,33 @@ from libMLS.cipher_suite import CipherSuite
 
 class X25519CipherSuite(CipherSuite):
     """
-    A ciphersuite consisting of the three primitives:
-    Curve25519
-    AES-128-GCM
-    SHA-256
+    RFC Section 6.1 Curve25519, SHA-256, and AES-128-GCM
+    https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-6.1
 
-    see also https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-6.1
+    This ciphersuite uses the following primitives:
+
+    o  Hash function: SHA-256
+    o  AEAD: AES-128-GCM
+
+    When HPKE is used with this ciphersuite, it uses the following
+    algorithms:
+
+    o  KEM: 0x0002 = DHKEM(Curve25519)
+    o  KDF: 0x0001 = HKDF-SHA256
+    o  AEAD: 0x0001 = AES-GCM-128
+
+    Given an octet string X, the private key produced by the Derive-Key-
+    Pair operation is SHA-256(X).  (Recall that any 32-octet string is a
+    valid Curve25519 private key.)  The corresponding public key is
+    X25519(SHA-256(X), 9).
+
+    Implementations SHOULD use the approach specified in [RFC7748] to
+    calculate the Diffie-Hellman shared secret.  Implementations MUST
+    check whether the computed Diffie-Hellman shared secret is the all-
+    zero value and abort if so, as described in Section 6 of [RFC7748].
+    If implementers use an alternative implementation of these elliptic
+    curves, they SHOULD perform the additional checks specified in
+    Section 7 of [RFC7748]
     """
 
     def get_suite_identifier(self) -> int:
@@ -54,6 +75,11 @@ class X25519CipherSuite(CipherSuite):
         pass
 
     def derive_key_pair(self, material: bytes) -> Tuple[bytes, bytes]:
+        """
+        Derives a public, private key_pair from a given material
+        :param material: material to derive public and privates key from
+        :return: public_key, private_key derived from elliptic curve X25519
+        """
         digest: Hash = self.get_hash()
         digest.update(material)
         private_key: bytes = digest.finalize()
