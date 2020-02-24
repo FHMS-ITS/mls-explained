@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import List
 
+from libMLS.dot_dumper import DotDumper
 from libMLS.session import Session
 
 from chatclient.user import User
@@ -20,8 +21,12 @@ class Chat:
         self.name = username
         self.users = chat_users
         self.messages = []
-
         self.session = session
+
+        self.dumper = DotDumper(
+            self.session,
+            group_name=self.session.get_state().get_group_context().group_id.decode('utf-8')
+        )
 
     @classmethod
     def from_welcome(cls, chat_users, username, session) -> "Chat":

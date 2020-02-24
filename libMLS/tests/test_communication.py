@@ -164,7 +164,7 @@ def test_update_message_serialized():
 
 class StubHandler(AbstractApplicationHandler):
 
-    def on_application_message(self, application_data: bytes):
+    def on_application_message(self, application_data: bytes, group_id: bytes):
         pass
 
     def on_group_welcome(self, session):
@@ -196,5 +196,3 @@ def test_handshake_processing():
     # assert that both sessions have the same state after adds
     assert alice_session.get_state().get_tree().get_num_nodes() == 3
     assert bob_session.get_state().get_tree().get_num_nodes() == 3
-
-
