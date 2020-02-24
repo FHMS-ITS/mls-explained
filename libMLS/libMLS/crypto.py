@@ -59,6 +59,7 @@ class HkdfLabel:
     Hash.length is its output length in bytes. 
 """
 
+
 # pylint: disable=unused-argument
 def hkdf_expand_label(secret: bytes, label: bytes, context: GroupContext, cipher_suite: CipherSuite) -> bytes:
     """
