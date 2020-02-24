@@ -12,7 +12,7 @@ from libMLS.cipher_suite import CipherSuite
 
 class X25519CipherSuite(CipherSuite):
     """
-    6.1.  Curve25519, SHA-256, and AES-128-GCM
+    RFC Section 6.1 Curve25519, SHA-256, and AES-128-GCM
     https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-6.1
 
     This ciphersuite uses the following primitives:

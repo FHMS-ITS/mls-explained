@@ -9,7 +9,7 @@ from .tree_node import LeafNodeHashInput, LeafNodeInfo, ParentNodeHashInput
 
 class Tree:
     """
-    RFC 5.2 Ratchet Tree Nodes
+    RFC Section 5.2 Ratchet Tree Nodes
     https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-5.2
 
     A particular instance of a ratchet tree is based on the following
@@ -106,7 +106,7 @@ class Tree:
 
     def _blank_path(self, node_index: int) -> None:
         """
-        RFC 5.2 Ratchet Tree Nodes
+        RFC Section 5.2 Ratchet Tree Nodes
         https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-5.2
 
         A node in the tree may also be _blank_, indicating that no value is present at that node.
@@ -129,7 +129,7 @@ class Tree:
 
     def get_tree_hash(self) -> bytes:
         """
-        RFC 6.3 Tree Hashes
+        RFC Section 6.3 Tree Hashes
         https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-6.3
 
         To allow group members to verify that they agree on the cryptographic
@@ -158,7 +158,7 @@ class Tree:
 
     def _get_leaf_hash(self, node_index) -> bytes:
         """
-        RFC 6.3 Tree Hashes
+        RFC Section 6.3 Tree Hashes
         https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-6.3
 
         The hash of a leaf node is the hash of a "LeafNodeHashInput" object.
@@ -180,7 +180,7 @@ class Tree:
 
     def _get_intermediate_hash(self, node_index: int) -> bytes:
         """
-        RFC 6.3 Tree Hashes
+        RFC Section 6.3 Tree Hashes
         https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-6.3
 
         Likewise, the hash of a parent node (including the root) is the hash

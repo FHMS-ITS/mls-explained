@@ -15,7 +15,7 @@ from libMLS.x25519_cipher_suite import X25519CipherSuite
 
 class State:
     """
-    RFC 6.4 Group State
+    RFC Section 6.4 Group State
     https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-6.4
 
     When a new member is added to the group, an existing member of the
@@ -113,7 +113,7 @@ class State:
     # pylint: disable=unused-argument
     def add(self, user_init_key: bytes, user_credential: bytes) -> (WelcomeInfoMessage, AddMessage):
         """
-        RFC 9.2 Add
+        RFC Section 9.2 Add
         https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-9.2
 
         In order to add a new member to the group, an existing member of the
@@ -167,7 +167,7 @@ class State:
 
     def process_add(self, add_message: AddMessage, private_key=Optional[bytes]) -> None:
         """
-        RFC 9.2 Add
+        RFC Section 9.2 Add
         https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-9.2
 
         A group member generates this message by requesting a ClientInitKey
@@ -220,7 +220,7 @@ class State:
 
     def update(self, leaf_index: int) -> UpdateMessage:
         """
-        RFC 9.3 Update
+        RFC Section 9.3 Update
         https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-9.3
 
         The sender of an Update message creates it in the following way:
@@ -297,7 +297,7 @@ class State:
 
     def process_update(self, leaf_index: int, message: UpdateMessage) -> None:
         """
-        RFC 5.5 Synchronizing Views of the Tree
+        RFC Section 5.5 Synchronizing Views of the Tree
         https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-5.5
 
         The recipient of an update processes it with the following steps:

@@ -9,7 +9,7 @@ from libMLS.message_packer import pack_dynamic, unpack_dynamic
 @dataclass
 class LeafNodeInfo:
     """
-    RFC 6.3 Tree Hashes
+    RFC Section 6.3 Tree Hashes
     https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-6.3
 
     struct {
@@ -33,7 +33,7 @@ class LeafNodeInfo:
 @dataclass
 class LeafNodeHashInput:
     """
-    RFC 6.3 Tree Hashes
+    RFC Section 6.3 Tree Hashes
     https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-6.3
 
     The hash of a tree is the hash of its root node, which we define
@@ -65,7 +65,7 @@ class LeafNodeHashInput:
 @dataclass
 class ParentNodeHashInput:
     """
-    RFC 6.3 Tree Hashes
+    RFC Section 6.3 Tree Hashes
     https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-6.3
 
     Likewise, the hash of a parent node (including the root) is the hash
@@ -99,7 +99,7 @@ class ParentNodeHashInput:
 
 class TreeNode(AbstractMessage):
     """
-    RFC 5.2 Ratchet Tree Nodes
+    RFC Section 5.2 Ratchet Tree Nodes
     https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-5.2
 
     Each node in a ratchet tree contains up to three values:

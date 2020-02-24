@@ -4,7 +4,7 @@ from dataclasses import dataclass
 @dataclass
 class GroupContext:
     """
-    RFC 6.4 Group State
+    RFC Section 6.4 Group State
     https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-6.4
 
     Each member of the group maintains a GroupContext object that

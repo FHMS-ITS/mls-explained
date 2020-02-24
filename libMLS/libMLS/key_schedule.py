@@ -8,7 +8,7 @@ from libMLS.cipher_suite import CipherSuite
 # pylint: disable=too-many-instance-attributes
 class KeySchedule:
     """
-    RFC 6.6 Key Schedule
+    RFC Section 6.6 Key Schedule
     https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-6.6
 
     When processing a handshake message, a client combines the following

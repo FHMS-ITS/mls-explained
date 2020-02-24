@@ -4,7 +4,7 @@ from cryptography.hazmat.primitives.hashes import Hash
 
 class CipherSuite:
     """
-    RFC 6 Cryptographic Objects
+    RFC Section 6 Cryptographic Objects
     https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-6
 
     Each MLS session uses a single ciphersuite that specifies the

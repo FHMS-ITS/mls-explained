@@ -80,7 +80,7 @@ class Session:
 
     def process_add(self, add_message: AddMessage) -> None:
         """
-        RFC 9.2 Add
+        RFC Section 9.2 Add
         https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-9.2
 
         The client joining the group processes Welcome and Add messages
@@ -132,7 +132,7 @@ class Session:
 
     def update(self) -> UpdateMessage:
         """
-        RFC 9.3 Update
+        RFC Section 9.3 Update
         https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-9.3
 
         An Update message is sent by a group member to update its leaf secret
@@ -151,7 +151,7 @@ class Session:
 
     def process_update(self, leaf_index: int, update_message: UpdateMessage) -> None:
         """
-        RFC 9.3 Update
+        RFC Section 9.3 Update
         https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-9.3
 
         A member receiving a Update message first verifies the signature on
@@ -169,11 +169,12 @@ class Session:
 
     def encrypt_application_message(self, message: str) -> MLSCiphertext:
         """
-        RFC 11.1 Tree of Application Secrets
-        RFC 11.2 Sender Ratchets
-        RFC 11.3 Deletion Schedule
+        RFC Section 11.1 Tree of Application Secrets
+        RFC Section 11.2 Sender Ratchets
+        RFC Section 11.3 Deletion Schedule
 
-        Here would be the encryption using the ApplicationSecretTree and DoubleRatchets
+        Here, the the encryption of application messages using the ApplicationSecretTree and
+        DoubleRatchets would take place.
 
         :param message: the message to encrypt
         :return: the encrypted MLSCiphertext object
@@ -208,7 +209,7 @@ class Session:
 
     def encrypt_handshake_message(self, group_op: GroupOperation) -> MLSCiphertext:
         """
-        RFC 9 Handshake Message
+        RFC Section 9 Handshake Message
         https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-9
 
         An MLS handshake message encapsulates a specific GroupOperation
@@ -249,7 +250,7 @@ class Session:
 
     def _process_handshake(self, message: MLSCiphertext, handler: AbstractApplicationHandler) -> None:
         """
-        RFC 9 Handshake Message
+        RFC Section 9 Handshake Message
         https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-9
 
         The high-level flow for processing a handshake message is as follows:
@@ -309,11 +310,11 @@ class Session:
     # pylint: disable=no-self-use
     def _process_application(self, message: MLSCiphertext, handler: AbstractApplicationHandler) -> None:
         """
-        RFC 11 Application Messages
+        RFC Section 11 Application Messages
         https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-11
-        RFC 11.1 Tree of Application Secrets
-        RFC 11.2 Sender Ratchets
-        RFC 11.3 Deletion Schedule
+        RFC Section 11.1 Tree of Application Secrets
+        RFC Section 11.2 Sender Ratchets
+        RFC Section 11.3 Deletion Schedule
 
         The primary purpose of the Handshake protocol is to provide an
         authenticated group key exchange to clients.  In order to protect

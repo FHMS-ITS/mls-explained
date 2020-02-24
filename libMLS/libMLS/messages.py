@@ -13,7 +13,7 @@ from libMLS.tree_node import TreeNode
 
 class ContentType(Enum):
     """
-    RFC 8 Message Framing
+    RFC Section 8 Message Framing
     https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-8
 
     enum {
@@ -30,8 +30,7 @@ class ContentType(Enum):
 
 class GroupOperationType(Enum):
     """
-    RFC 9 Handshake Messages
-
+    RFC Section 9 Handshake Messages
     https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-9
 
     enum {
@@ -56,7 +55,7 @@ class CipherSuiteType(Enum):
 
 class InitMessage(AbstractMessage):
     """
-    RFC 9.1 Init
+    RFC Section 9.1 Init
     https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-9.1
 
     A group can always be created by initializing a one-member group and
@@ -86,7 +85,7 @@ class InitMessage(AbstractMessage):
 @dataclass
 class AddMessage(AbstractMessage):
     """
-    RFC 9.2 Add
+    RFC Section 9.2 Add
     https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-9.2
 
     An Add message provides existing group members with the information
@@ -144,7 +143,7 @@ class AddMessage(AbstractMessage):
 @dataclass
 class DirectPathNode(AbstractMessage):
     """
-    6.5.  Direct Paths
+    RFC Section 6.5 Direct Paths
     https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-6.5
 
     As described in Section 5.4, each MLS message needs to transmit node
@@ -219,7 +218,7 @@ class DirectPathNode(AbstractMessage):
 @dataclass
 class UpdateMessage(AbstractMessage):
     """
-    RFC 9.3 Update
+    RFC Section 9.3 Update
     https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-9.3
 
     An Update message is sent by a group member to update its leaf secret
@@ -273,7 +272,7 @@ class UpdateMessage(AbstractMessage):
 
 class RemoveMessage(AbstractMessage):
     """
-    RFC 9.4 Remove
+    RFC Section 9.4 Remove
     https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-9.4
 
     A Remove message is sent by a group member to remove one or more
@@ -301,7 +300,7 @@ class RemoveMessage(AbstractMessage):
 @dataclass
 class GroupOperation(AbstractMessage):
     """
-    RFC 9 Handshake
+    RFC Section 9 Handshake
     https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-9
 
     In MLS, these changes are accomplished by broadcasting "handshake"
@@ -446,7 +445,7 @@ class MLSPlaintextApplicationData(AbstractMessage):
 @dataclass
 class MLSSenderData(AbstractMessage):
     """
-    RFC 8.1 Metadata Encryption
+    RFC Section 8.1 Metadata Encryption
     https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-8.1
 
     The "sender data" used to look up the key for the content encryption
@@ -498,7 +497,7 @@ class MLSSenderData(AbstractMessage):
 @dataclass
 class MLSPlaintext(AbstractMessage):
     """
-    RFC 8 Message Framing
+    RFC Section 8 Message Framing
     https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-8
 
     Handshake and application messages use a common framing structure.
@@ -600,7 +599,7 @@ class MLSPlaintext(AbstractMessage):
 @dataclass
 class MLSCiphertext(AbstractMessage):
     """
-    RFC 8 Message Framing
+    RFC Section 8 Message Framing
     https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-8
 
     Handshake and application messages use a common framing structure.
@@ -679,7 +678,7 @@ class MLSCiphertext(AbstractMessage):
 @dataclass
 class HPKECiphertext(AbstractMessage):
     """
-    6.5.  Direct Paths
+    RFC Section 6.5 Direct Paths
     https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-6.5
 
     struct {
@@ -732,7 +731,7 @@ class HPKECiphertext(AbstractMessage):
 # pylint: disable=too-many-instance-attributes
 class WelcomeInfoMessage(AbstractMessage):
     """
-    RFC 9.2 Add
+    RFC Section 9.2 Add
     https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-9.2
 
     The Welcome message contains the information that the new member
@@ -851,7 +850,7 @@ class WelcomeInfoMessage(AbstractMessage):
 @dataclass
 class WelcomeMessage(AbstractMessage):
     """
-    RFC 9.2 Add
+    RFC Section 9.2 Add
     https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-9.2
 
     struct {

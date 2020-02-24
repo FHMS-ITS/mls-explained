@@ -13,7 +13,7 @@ from libMLS.group_context import GroupContext
 @dataclass
 class HkdfLabel:
     """
-    RFC 6.6 Key Schedule
+    RFC Section 6.6 Key Schedule
     https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-6.6
 
     Where HkdfLabel is specified as:
@@ -42,7 +42,7 @@ class HkdfLabel:
 
 # pylint: disable=pointless-string-statement
 """
-    RFC 6.6 Key Schedule
+    RFC Section 6.6 Key Schedule
     https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-6.6
 
     Group keys are derived using the HKDF-Extract and HKDF-Expand
@@ -95,7 +95,7 @@ def hkdf_extract(secret: bytes, salt: bytes, cipher_suite: CipherSuite) -> bytes
 
 def derive_secret(secret: bytes, label: bytes, context: GroupContext, cipher_suite: CipherSuite) -> bytes:
     """
-    (Same as hkdf_expand_label, see RFC 6.6)
+    (Same as hkdf_expand_label, see RFC Section 6.6)
 
     Derives a secret from given secret, label and GroupContext object
     :param secret: secret argument for hkdf_expand_label
