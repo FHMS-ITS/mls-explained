@@ -8,6 +8,20 @@ from libMLS.message_packer import pack_dynamic, unpack_dynamic
 
 @dataclass
 class LeafNodeInfo:
+    """
+    RFC 6.3 Tree Hashes
+    https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-6.3
+
+    struct {
+       HPKEPublicKey public_key;
+       Credential credential;
+    } LeafNodeInfo;
+
+    The "public_key" and "credential" fields represent the leaf public
+    key and the credential for the member holding that leaf,
+    respectively.  The "info" field is equal to the null optional value
+    when the leaf is blank (i.e., no member occupies that leaf).
+    """
     public_key: bytes
     credentials: bytes
 
@@ -18,6 +32,28 @@ class LeafNodeInfo:
 
 @dataclass
 class LeafNodeHashInput:
+    """
+    RFC 6.3 Tree Hashes
+    https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-6.3
+
+    The hash of a tree is the hash of its root node, which we define
+    recursively, starting with the leaves.  The hash of a leaf node is
+    the hash of a "LeafNodeHashInput" object:
+
+    struct {
+       uint8 present;
+       switch (present) {
+           case 0: struct{};
+           case 1: T value;
+       }
+    } optional<T>;
+
+
+    struct {
+       uint8 hash_type = 0;
+       optional<LeafNodeInfo> info;
+    } LeafNodeHashInput;
+    """
     info: Optional[LeafNodeInfo]
     hash_type: int = 0
 
@@ -28,6 +64,26 @@ class LeafNodeHashInput:
 
 @dataclass
 class ParentNodeHashInput:
+    """
+    RFC 6.3 Tree Hashes
+    https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-6.3
+
+    Likewise, the hash of a parent node (including the root) is the hash
+    of a "ParentNodeHashInput" struct:
+
+    struct {
+       uint8 hash_type = 1;
+       optional<HPKEPublicKey> public_key;
+       opaque left_hash<0..255>;
+       opaque right_hash<0..255>;
+    } ParentNodeHashInput
+
+    The "left_hash" and "right_hash" fields hold the hashes of the node's
+    left and right children, respectively.  The "public_key" field holds
+    the hash of the public key stored at this node, represented as an
+    "optional<HPKEPublicKey>" object, which is null if and only if the
+    node is blank.
+    """
     public_key: Optional[bytes]
     left_hash: bytes
     right_hash: bytes
@@ -42,7 +98,18 @@ class ParentNodeHashInput:
 
 
 class TreeNode(AbstractMessage):
+    """
+    RFC 5.2 Ratchet Tree Nodes
+    https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-5.2
 
+    Each node in a ratchet tree contains up to three values:
+        o  A private key (only within direct path, see below)
+        o  A public key
+        o  A credential (only for leaf nodes)
+
+    The conditions under which each of these values must or must not be
+    present are laid out in Section 5.3.
+    """
     def __init__(self, public_key: bytes, private_key: Optional[bytes] = None, credentials: Optional[bytes] = None):
         super().__init__()
         self._public_key: bytes = public_key

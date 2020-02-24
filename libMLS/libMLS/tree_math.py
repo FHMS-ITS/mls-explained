@@ -2,6 +2,37 @@
 # int(math.floor(math.log(x, 2)))
 from typing import List
 
+# pylint: disable=pointless-string-statement
+"""
+    RFC Appendix A. Tree Math
+    https://tools.ietf.org/html/draft-ietf-mls-protocol-07#appendix-A
+
+    One benefit of using left-balanced trees is that they admit a simple
+    flat array representation.  In this representation, leaf nodes are
+    even-numbered nodes, with the n-th leaf at 2*n.  Intermediate nodes
+    are held in odd-numbered nodes.  For example, a 11-element tree has
+    the following structure:
+
+                                                 X
+                         X
+             X                       X                       X
+       X           X           X           X           X
+    X     X     X     X     X     X     X     X     X     X     X
+    0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20
+
+    This allows us to compute relationships between tree nodes simply by
+    manipulating indices, rather than having to maintain complicated
+    structures in memory, even for partial trees.  The basic rule is that
+    the high-order bits of parent and child nodes have the following
+    relation (where "x" is an arbitrary bit string):
+
+    parent=01x => left=00x, right=10x
+
+    The following python code demonstrates the tree computations
+    necessary for MLS.  Test vectors can be derived from the diagram
+    above.
+"""
+
 
 def log2(number: int):
     if number == 0:

@@ -8,6 +8,19 @@ from .tree_node import LeafNodeHashInput, LeafNodeInfo, ParentNodeHashInput
 
 
 class Tree:
+    """
+    RFC 5.2 Ratchet Tree Nodes
+    https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-5.2
+
+    A particular instance of a ratchet tree is based on the following
+    cryptographic primitives, defined by the ciphersuite in use:
+
+        o  An HPKE ciphersuite, which specifies a Key Encapsulation Method
+           (KEM), an AEAD encryption scheme, and a hash function
+        o  A Derive-Key-Pair function that produces an asymmetric key pair
+           for the specified KEM from a symmetric secret, using the specified
+           hash function.
+    """
 
     def __init__(self, cipher_suite: CipherSuite, nodes: Optional[List[Optional[TreeNode]]] = None):
         self.cipher_suite = cipher_suite
@@ -71,12 +84,11 @@ class Tree:
 
     def add_leaf(self, node: TreeNode, leaf_index: Optional[int] = None) -> None:
         """
-        Appends a node to the ratched tree
+        Appends a ratchetTreeNode to the ratchetTree
         @todo: ignores blank tree leaves at the moment (could occur after user removal). These should be populated first
         @todo: path hash
-        :param node:
-        :param leaf_index:
-        :return:
+        :param node: the ratchetTreeNode which should be added to the ratchetTree
+        :param leaf_index: index where the leaf should be added
         """
 
         if leaf_index is None:
@@ -93,7 +105,16 @@ class Tree:
         self._blank_path(len(self._nodes) - 1)
 
     def _blank_path(self, node_index: int) -> None:
+        """
+        RFC 5.2 Ratchet Tree Nodes
+        https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-5.2
 
+        A node in the tree may also be _blank_, indicating that no value is present at that node.
+
+        This is a helper function, that blanks a path from a node to the root node
+
+        :param node_index: index of the ratchetTreeNode which path should be blanked
+        """
         current_index = node_index
         last_index = node_index
 
@@ -107,18 +128,44 @@ class Tree:
             last_index = current_index
 
     def get_tree_hash(self) -> bytes:
+        """
+        RFC 6.3 Tree Hashes
+        https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-6.3
+
+        To allow group members to verify that they agree on the cryptographic
+        state of the group, this section defines a scheme for generating a
+        hash value that represents the contents of the group's ratchet tree
+        and the members' credentials.
+
+        :return: treeHash
+        """
         if self.get_root() is None:
             raise IndexError()
 
         return self._get_node_hash(node_index=self.get_root())
 
     def _get_node_hash(self, node_index: int) -> bytes:
+        """
+        The hash of a node is determined in get_leaf_hash if the node is a leaf
+        or else in get_intermediate_hash if the node has children
+
+        :param node_index: index of the ratchetTreeNode that should be hashed
+        :return: hash of ratchetTreeNode
+        """
         if is_leaf(node_index):
             return self._get_leaf_hash(node_index)
         return self._get_intermediate_hash(node_index)
 
     def _get_leaf_hash(self, node_index) -> bytes:
+        """
+        RFC 6.3 Tree Hashes
+        https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-6.3
 
+        The hash of a leaf node is the hash of a "LeafNodeHashInput" object.
+
+        :param node_index: index of the ratchetTreeNode that should be hashed
+        :return: hash of ratchetTreeNode
+        """
         if self._nodes[node_index]:
             node_info = LeafNodeInfo(self._nodes[node_index].get_public_key(),
                                      self._nodes[node_index].get_credentials())
@@ -132,6 +179,16 @@ class Tree:
         return node_hash.finalize()
 
     def _get_intermediate_hash(self, node_index: int) -> bytes:
+        """
+        RFC 6.3 Tree Hashes
+        https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-6.3
+
+        Likewise, the hash of a parent node (including the root) is the hash
+        of a "ParentNodeHashInput" struct.
+
+        :param node_index: index of the ratchetTreeNode that should be hashed
+        :return: hash of ratchetTreeNode
+        """
         left_node = left(node_index)
         right_node = right(node_index, self.get_num_leaves())
 
@@ -149,7 +206,6 @@ class Tree:
         return node_hash.finalize()
 
     def __str__(self):
-
         out_string: str = 'Tree:\n'
         for node_index in range(len(self._nodes)):
             out_string += f'[{node_index}] ' + ('\t' * level(node_index)) + str(self._nodes[node_index]) + '\n'

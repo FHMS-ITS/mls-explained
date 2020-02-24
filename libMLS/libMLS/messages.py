@@ -12,12 +12,37 @@ from libMLS.tree_node import TreeNode
 
 
 class ContentType(Enum):
+    """
+    RFC 8 Message Framing
+    https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-8
+
+    enum {
+        invalid(0),
+        handshake(1),
+        application(2),
+        (255)
+    } ContentType;
+    """
     INVALID = 0
     HANDSHAKE = 1
     APPLICATION = 2
 
 
 class GroupOperationType(Enum):
+    """
+    RFC 9 Handshake Messages
+
+    https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-9
+
+    enum {
+        init(0),
+        add(1),
+        update(2),
+        remove(3),
+        (255)
+    } GroupOperationType;
+
+    """
     INIT = 0
     ADD = 1
     UPDATE = 2
@@ -30,7 +55,23 @@ class CipherSuiteType(Enum):
 
 
 class InitMessage(AbstractMessage):
+    """
+    RFC 9.1 Init
+    https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-9.1
 
+    A group can always be created by initializing a one-member group and
+    using adding members individually.  For cases where the initial list
+    of members is known, the Init message allows a group to be created
+    more efficiently.
+
+    struct {
+        opaque group_id<0..255>;
+        ProtocolVersion version;
+        CipherSuite cipher_suite;
+        ClientInitKey members<0..2^32-1>;
+        DirectPath path;
+    } Init;
+    """
     def validate(self) -> bool:
         return False
 
@@ -44,6 +85,31 @@ class InitMessage(AbstractMessage):
 
 @dataclass
 class AddMessage(AbstractMessage):
+    """
+    RFC 9.2 Add
+    https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-9.2
+
+    An Add message provides existing group members with the information
+    they need to update their GroupContext with information about the new
+    member:
+
+    struct {
+        uint32 index;
+        ClientInitKey init_key;
+        opaque welcome_info_hash<0..255>;
+    } Add;
+
+    The "index" field indicates where in the tree the new member should
+    be added.  The new member can be added at an existing, blank leaf
+    node, or at the right edge of the tree.  In any case, the "index"
+    value MUST satisfy "0 <= index <= n", where "n" is the size of the
+    group.  The case "index = n" indicates an add at the right edge of
+    the tree).  If "index < n" and the leaf node at position "index" is
+    not blank, then the recipient MUST reject the Add as malformed.
+
+    The "welcome_info_hash" field contains a hash of the WelcomeInfo
+    object sent in a Welcome message to the new member.
+    """
     index: int
     init_key: bytes
     welcome_info_hash: bytes
@@ -77,6 +143,33 @@ class AddMessage(AbstractMessage):
 
 @dataclass
 class DirectPathNode(AbstractMessage):
+    """
+    6.5.  Direct Paths
+    https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-6.5
+
+    As described in Section 5.4, each MLS message needs to transmit node
+    values along the direct path of a leaf.  The path contains a public
+    key for the leaf node, and a public key and encrypted secret value
+    for intermediate nodes in the path.  In both cases, the path is
+    ordered from the leaf to the root; each node MUST be the parent of
+    its predecessor.
+
+    struct {
+        HPKEPublicKey public_key;
+        HPKECiphertext encrypted_path_secret<0..2^16-1>;
+    } DirectPathNode;
+
+    struct {
+        DirectPathNode nodes<0..2^16-1>;
+    } DirectPath;
+
+    The length of the "encrypted_path_secret" vector MUST be zero for the
+    first node in the path.  For the remaining elements in the vector,
+    the number of ciphertexts in the "encrypted_path_secret" vector MUST
+    be equal to the length of the resolution of the corresponding copath
+    node.  Each ciphertext in the list is the encryption to the
+    corresponding node in the resolution.
+    """
     public_key: bytes
     encrypted_path_secret: List['HPKECiphertext']
 
@@ -125,6 +218,18 @@ class DirectPathNode(AbstractMessage):
 
 @dataclass
 class UpdateMessage(AbstractMessage):
+    """
+    RFC 9.3 Update
+    https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-9.3
+
+    An Update message is sent by a group member to update its leaf secret
+    and key pair.  This operation provides post-compromise security with
+    regard to the member's prior leaf private key.
+
+    struct {
+        DirectPath path;
+    } Update;
+    """
     direct_path: List[DirectPathNode]
 
     def _pack(self) -> bytes:
@@ -167,7 +272,21 @@ class UpdateMessage(AbstractMessage):
 
 
 class RemoveMessage(AbstractMessage):
+    """
+    RFC 9.4 Remove
+    https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-9.4
 
+    A Remove message is sent by a group member to remove one or more
+    other members from the group.  A member MUST NOT use a Remove message
+    to remove themselves from the group.  If a member of a group receives
+    a Remove message where the removed index is equal to the signer
+    index, the recipient MUST reject the message as malformed.
+
+    struct {
+        uint32 removed;
+        DirectPath path;
+    } Remove;
+    """
     def validate(self) -> bool:
         return False
 
@@ -181,6 +300,23 @@ class RemoveMessage(AbstractMessage):
 
 @dataclass
 class GroupOperation(AbstractMessage):
+    """
+    RFC 9 Handshake
+    https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-9
+
+    In MLS, these changes are accomplished by broadcasting "handshake"
+    messages to the group.  Note that unlike TLS and DTLS, there is not a
+    consolidated handshake phase to the protocol.  Rather, handshake
+    messages are exchanged throughout the lifetime of a group, whenever a
+    change is made to the group state.  This means an unbounded number of
+    interleaved application and handshake messages.
+
+    An MLS handshake message encapsulates a specific GroupOperation
+    message that accomplishes a change to the group state.  It is carried
+    in an MLSPlaintext message that provides a signature by the sender of
+    the message.  Applications may choose to send handshake messages in
+    encrypted form, as MLSCiphertext messages.
+    """
     msg_type: GroupOperationType
     operation: Union[InitMessage, AddMessage, UpdateMessage, RemoveMessage]
 
@@ -309,6 +445,25 @@ class MLSPlaintextApplicationData(AbstractMessage):
 
 @dataclass
 class MLSSenderData(AbstractMessage):
+    """
+    RFC 8.1 Metadata Encryption
+    https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-8.1
+
+    The "sender data" used to look up the key for the content encryption
+    is encrypted under AEAD using the MLSCiphertext sender_data_nonce and
+    the sender_data_key from the keyschedule.  It is encoded as an object
+    of the following form:
+
+    struct {
+        uint32 sender;
+        uint32 generation;
+    } MLSSenderData;
+
+    When parsing a SenderData struct as part of message decryption, the
+    recipient MUST verify that the sender field represents an occupied
+    leaf in the ratchet tree.  In particular, the sender index value MUST
+    be less than the number of leaves in the tree.
+    """
     sender: int
     generation: int
 
@@ -342,6 +497,40 @@ class MLSSenderData(AbstractMessage):
 
 @dataclass
 class MLSPlaintext(AbstractMessage):
+    """
+    RFC 8 Message Framing
+    https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-8
+
+    Handshake and application messages use a common framing structure.
+    This framing provides encryption to assure confidentiality within the
+    group, as well as signing to authenticate the sender within the
+    group.
+
+    The two main structures involved are MLSPlaintext and MLSCiphertext.
+    MLSCiphertext represents a signed and encrypted message, with
+    protections for both the content of the message and related metadata.
+    MLSPlaintext represents a message that is only signed, and not
+    encrypted.  Applications SHOULD use MLSCiphertext to encode both
+    application and handshake messages, but MAY transmit handshake
+    messages encoded as MLSPlaintext objects in cases where it is
+    necessary for the delivery service to examine such messages.
+
+    struct {
+        opaque group_id<0..255>;
+        uint32 epoch;
+        uint32 sender;
+        ContentType content_type;
+
+        select (MLSPlaintext.content_type) {
+            case handshake:
+                GroupOperation operation;
+                opaque confirmation<0..255>;
+            case application:
+                opaque application_data<0..2^32-1>;
+        }
+        opaque signature<0..2^16-1>;
+    } MLSPlaintext;
+    """
     group_id: bytes
     epoch: int
     sender: int
@@ -410,6 +599,33 @@ class MLSPlaintext(AbstractMessage):
 
 @dataclass
 class MLSCiphertext(AbstractMessage):
+    """
+    RFC 8 Message Framing
+    https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-8
+
+    Handshake and application messages use a common framing structure.
+    This framing provides encryption to assure confidentiality within the
+    group, as well as signing to authenticate the sender within the
+    group.
+
+    The two main structures involved are MLSPlaintext and MLSCiphertext.
+    MLSCiphertext represents a signed and encrypted message, with
+    protections for both the content of the message and related metadata.
+    MLSPlaintext represents a message that is only signed, and not
+    encrypted.  Applications SHOULD use MLSCiphertext to encode both
+    application and handshake messages, but MAY transmit handshake
+    messages encoded as MLSPlaintext objects in cases where it is
+    necessary for the delivery service to examine such messages.
+
+    struct {
+       opaque group_id<0..255>;
+       uint32 epoch;
+       ContentType content_type;
+       opaque sender_data_nonce<0..255>;
+       opaque encrypted_sender_data<0..255>;
+       opaque ciphertext<0..2^32-1>;
+   } MLSCiphertext;
+    """
     # todo: Replace prefix with SenderDataAAD
     group_id: bytes
     epoch: int
@@ -462,6 +678,28 @@ class MLSCiphertext(AbstractMessage):
 
 @dataclass
 class HPKECiphertext(AbstractMessage):
+    """
+    6.5.  Direct Paths
+    https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-6.5
+
+    struct {
+        HPKEPublicKey ephemeral_key;
+        opaque ciphertext<0..2^16-1>;
+    } HPKECiphertext;
+
+    The HPKECiphertext values are computed as
+
+    ephemeral_key, context = SetupBaseI(node_public_key, "")
+    ciphertext = context.Seal("", path_secret)
+
+    where "node_public_key" is the public key of the node that the path
+    secret is being encrypted for, and the functions "SetupBaseI" and
+    "Seal" are defined according to [I-D.irtf-cfrg-hpke].
+
+    Decryption is performed in the corresponding way, using the private
+    key of the resolution node and the ephemeral public key transmitted
+    in the message.
+    """
     ephemeral_key: bytes
     cipher_text: bytes
 
@@ -493,6 +731,40 @@ class HPKECiphertext(AbstractMessage):
 @dataclass
 # pylint: disable=too-many-instance-attributes
 class WelcomeInfoMessage(AbstractMessage):
+    """
+    RFC 9.2 Add
+    https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-9.2
+
+    The Welcome message contains the information that the new member
+    needs to initialize a GroupContext object that can be updated to the
+    current state using the Add message.  This information is encrypted
+    for the new member using HPKE.  The recipient key pair for the HPKE
+    encryption is the one included in the indicated ClientInitKey,
+    corresponding to the indicated ciphersuite.  The "add_key_nonce"
+    field contains the key and nonce used to encrypt the corresponding
+    Add message; if it is not encrypted, then this field MUST be set to
+    the null optional value.
+
+    struct {
+        ProtocolVersion version;
+        opaque group_id<0..255>;
+        uint32 epoch;
+        optional<RatchetNode> tree<1..2^32-1>;
+        opaque interim_transcript_hash<0..255>;
+        opaque init_secret<0..255>;
+        optional<KeyAndNonce> add_key_nonce;
+    } WelcomeInfo;
+
+    struct {
+        opaque client_init_key_id<0..255>;
+        CipherSuite cipher_suite;
+        HPKECiphertext encrypted_welcome_info;
+    } Welcome;
+
+    In the description of the tree as a list of nodes, the "credential"
+    field for a node MUST be populated if and only if that node is a leaf
+    in the tree.
+    """
     protocol_version: bytes
     group_id: bytes
     epoch: int
@@ -578,6 +850,30 @@ class WelcomeInfoMessage(AbstractMessage):
 
 @dataclass
 class WelcomeMessage(AbstractMessage):
+    """
+    RFC 9.2 Add
+    https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-9.2
+
+    struct {
+        opaque client_init_key_id<0..255>;
+        CipherSuite cipher_suite;
+        HPKECiphertext encrypted_welcome_info;
+    } Welcome;
+
+    Note that the "init_secret" in the Welcome message is the
+    "init_secret" at the output of the key schedule diagram in
+    Section 6.6.  That is, if the "epoch" value in the Welcome message is
+    "n", then the "init_secret" value is "init_secret_[n]".  The new
+    member can combine this init secret with the update secret
+    transmitted in the corresponding Add message to get the epoch secret
+    for the epoch in which it is added.  No secrets from prior epochs are
+    revealed to the new member.
+
+    Since the new member is expected to process the Add message for
+    itself, the Welcome message should reflect the state of the group
+    before the new user is added.  The sender of the Welcome message can
+    simply copy all fields from their GroupContext object.
+    """
     client_init_key_id: bytes
     cipher_suite: CipherSuiteType
     encrypted_welcome_info: HPKECiphertext
