@@ -42,7 +42,7 @@ cleanup_files
 
 MKTEMP=${mktemp}/bin/mktemp
 DIRSERVER=${project}/infrastructure/bin/mls-dir-server
-CHATCLIENT=${project}/infrastructure/bin/mls-chat-client
+CHATCLIENT=${project}/infrastructure/bin/mls-chat-client-tui
 MKFIFO=${coreutils}/bin/mkfifo
 GREP=${pcre}/bin/pcregrep
 #GREP=${coreutils}/bin/grep
@@ -75,6 +75,8 @@ echo "Creating Init Keys..."
 
 echo 4 > bob     #New Init Key
 echo 1234 > bob
+
+sleep 1
 
 echo 4 > alice     #New Init Key
 echo 4321 > alice

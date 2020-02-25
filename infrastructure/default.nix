@@ -15,7 +15,7 @@ let
 
         src = ./.;
 
-        propagatedBuildInputs = with python37Packages; [ flask requests libMLS pytestrunner ];
+        propagatedBuildInputs = with python37Packages; [ flask requests libMLS pytestrunner qt5.full pyqt5 ];
         checkInputs = with python37Packages; [ pytest pylint pytest-pylint ];
 
         preCheck = ''
@@ -30,7 +30,9 @@ in pkgs.symlinkJoin {
   paths = [ output ];
   buildInputs = [ makeWrapper ];
   postBuild = ''
-    wrapProgram $out/bin/mls-chat-client \
+    wrapProgram $out/bin/mls-chat-client-gui \
+      --prefix PATH : ${graphviz}/bin
+    wrapProgram $out/bin/mls-chat-client-tui \
       --prefix PATH : ${graphviz}/bin
   '';
 }

@@ -53,7 +53,7 @@ class DotDumper:
         return overwrite_path
 
     def dump_next_state(self) -> str:
-
         path = self._img_dir + f'/state{str(self._num_dumped).rjust(3, "0")}.svg'
         self._num_dumped += 1
+
         return self.dump_dot_to_file(path)

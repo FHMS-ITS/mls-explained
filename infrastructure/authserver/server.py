@@ -59,7 +59,7 @@ def main():
     :return:
     """
 
-    APP.run("127.0.0.1:5000")
+    APP.run(host="localhost", port=5000)
 
 
 if __name__ == '__main__':

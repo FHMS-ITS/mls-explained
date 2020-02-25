@@ -19,21 +19,27 @@ class KeyService(AbstractKeystore):
         self._private_public_map: Dict[bytes, bytes] = {}
 
     def register_keypair(self, public_key: bytes, private_key: bytes):
-        keydata = json.dumps({"user": self._username, "key": public_key.hex(), "identifier": ""})
-        response = requests.post("http://" + self._dir_server_url + "/keys", data=keydata)
-        if response.status_code == 200:
-            self._private_public_map[public_key] = private_key
-        else:
-            raise RuntimeError("Failed to store key at server")
+        try:
+            keydata = json.dumps({"user": self._username, "key": public_key.hex(), "identifier": ""})
+            response = requests.post("http://" + self._dir_server_url + "/keys", data=keydata)
+            if response.status_code == 200:
+                self._private_public_map[public_key] = private_key
+            else:
+                raise RuntimeError("Failed to store key at server")
+        except requests.exceptions.ConnectionError:
+            raise ConnectionError
 
     def fetch_init_key(self, user_name: str) -> Optional[bytes]:
-        params = {"user": user_name}
-        response = requests.get("http://" + self._dir_server_url + "/keys", params=params)
+        try:
+            params = {"user": user_name}
+            response = requests.get("http://" + self._dir_server_url + "/keys", params=params)
 
-        if response.status_code != 200:
-            raise NoKeysAvailableException()
+            if response.status_code != 200:
+                raise NoKeysAvailableException()
 
-        return bytes.fromhex(json.loads(response.content))
+            return bytes.fromhex(json.loads(response.content))
+        except requests.exceptions.ConnectionError:
+            raise ConnectionError
 
     def get_private_key(self, public_key: bytes) -> Optional[bytes]:
         if public_key in self._private_public_map.keys():
