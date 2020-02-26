@@ -167,7 +167,7 @@ class Session:
         # todo: We still do not know which leaf to update with this add message
         self._state.process_update(leaf_index=leaf_index, message=update_message)
 
-    def encrypt_application_message(self, message: str) -> MLSCiphertext:
+    def encrypt_application_message(self, message: bytes) -> MLSCiphertext:
         """
         RFC Section 11.1 Tree of Application Secrets
         RFC Section 11.2 Sender Ratchets
@@ -179,8 +179,10 @@ class Session:
         :param message: the message to encrypt
         :return: the encrypted MLSCiphertext object
         """
-
-        # todo: fix this shait :
+        if self._user_index is None:
+            raise RuntimeError("User index is None. This typically happens, whenever we do not have the private"
+                               "key for a public key which is used to create a group, even though we should"
+                               "have it.")
 
         # pylint: disable=unexpected-keyword-arg
         sender_data = MLSSenderData(sender=self._user_index, generation=0)
@@ -192,7 +194,7 @@ class Session:
             content_type=ContentType.APPLICATION,
             sender=self._user_index,
             signature=b'0',
-            content=MLSPlaintextApplicationData(application_data=message.encode('UTF-8'))
+            content=MLSPlaintextApplicationData(application_data=message)
         )
 
         # pylint: disable=unexpected-keyword-arg

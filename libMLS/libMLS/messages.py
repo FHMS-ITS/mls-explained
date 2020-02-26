@@ -467,7 +467,7 @@ class MLSSenderData(AbstractMessage):
     generation: int
 
     def validate(self) -> bool:
-        return True
+        return self.sender is not None
 
     @classmethod
     def from_bytes(cls, data: bytes):
