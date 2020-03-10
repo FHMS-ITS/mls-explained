@@ -12,3 +12,6 @@ class AbstractApplicationHandler:
 
     def on_group_member_added(self, group_id: bytes):
         raise NotImplementedError()
+
+    def on_keys_updated(self, group_id: bytes):
+        raise NotImplementedError()

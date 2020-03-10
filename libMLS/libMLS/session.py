@@ -303,9 +303,11 @@ class Session:
             self.process_add(operation.operation)
             handler.on_group_member_added(plain.group_id)
         elif isinstance(operation.operation, UpdateMessage):
-            # todo: leaf??????
-            self.process_update(leaf_index=plain.sender, update_message=operation.operation)
-            raise RuntimeError()
+            # As this method is NOT resequencing safe, we must not execute our own update.
+            # See https://git.fh-muenster.de/masterprojekt-mls/implementation/issues/8
+            if plain.sender != self._user_index:
+                self.process_update(leaf_index=plain.sender, update_message=operation.operation)
+            handler.on_keys_updated(plain.group_id)
         else:
             raise RuntimeError()
 

@@ -51,16 +51,17 @@ class Message:
         """
         return self.user == other.user and self.device == other.device
 
-
     def __lt__(self, other):
         if self.timestamp < other.timestamp:
             return True
         return False
 
+
 class Messagestore(Store):
     """
     Manages Messages for Dirserver
     """
+
     @classmethod
     def from_json(cls, file_path: str, json_data):
         """
@@ -80,7 +81,6 @@ class Messagestore(Store):
         for element in self.elements:
             json_data.append(element.to_json())
             return json_data
-
 
     def add_element(self, element: Message):
         """
@@ -105,7 +105,6 @@ class Messagestore(Store):
             self.elements.remove(message)
 
         return result_list
-
 
     def get_element(self, element: Message) -> Message:
         """
@@ -136,7 +135,7 @@ class Messagestore(Store):
     def load_from_file(self):
         json_data = super().load_json_from_file()
 
-        #load elements with necesary values into List
+        # load elements with necesary values into List
         for datum in json_data:
             message_data = Message(datum["user"],
                                    datum["device"],

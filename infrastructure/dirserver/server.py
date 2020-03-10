@@ -65,8 +65,6 @@ def add_init_keys():
         return "Post has wrong format", 400
 
 
-# pylint: disable=too-many-function-args
-# false positive?
 @APP.route('/message', methods=["POST"])
 def message_fanout():
     """
@@ -85,6 +83,30 @@ def message_fanout():
         return "Post has wrong format", 400
 
 
+def _get_messages(user: str, device: str):
+    found_messages = MESSAGESTORE.get_messages(user, device)
+    found_messages_json = []
+    for message in found_messages:
+        found_messages_json.append(message.to_json())
+    return json.dumps(found_messages_json), 200
+
+
+@APP.route('/clear', methods=["DELETE"])
+def clear_information():
+    """
+    Clear all information associated with this user
+    INOFFICIAL PROTOCOL EXTENSION
+    """
+    try:
+        args = request.args.to_dict(flat=True)
+        INITKEYSTORE.clear_user(args["user"])
+        _get_messages(args["user"], args["device"])
+
+        return "success", 200
+    except KeyError:
+        return "Unknown User", 404
+
+
 @APP.route('/message', methods=["GET"])
 def get_messages():
     """
@@ -93,12 +115,7 @@ def get_messages():
     try:
         requested_user = request.args["user"]
         requested_device = request.args["device"]
-        found_messages = MESSAGESTORE.get_messages(requested_user, requested_device)
-        found_messages_json = []
-        for message in found_messages:
-            print(message)
-            found_messages_json.append(message.to_json())
-        return json.dumps(found_messages_json), 200
+        return _get_messages(requested_user, requested_device)
     except KeyError:
         return "Get has wrong format", 400
 

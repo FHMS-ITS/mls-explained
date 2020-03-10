@@ -56,8 +56,7 @@ class MLSClient(AbstractApplicationHandler):
         :return:
         """
         params = {"user": user, "device": device}
-        response = requests.get("http://" + self.auth_server + "/keys", params=params)
-        print(response.text)
+        requests.get("http://" + self.auth_server + "/keys", params=params)
 
     def publish_auth_key(self, user: str, device: str, key: str):
         """
@@ -68,8 +67,7 @@ class MLSClient(AbstractApplicationHandler):
         :return:
         """
         key_data = json.dumps({"user": user, "device": device, "long_term_key": key})
-        response = requests.post("http://" + self.auth_server + "/keys", data=key_data)
-        print(response.text)
+        requests.post("http://" + self.auth_server + "/keys", data=key_data)
 
     def send_welcome_to_user(self, user_name: str, message: WelcomeInfoMessage):
         message_data = json.dumps(
@@ -103,8 +101,6 @@ class MLSClient(AbstractApplicationHandler):
         for some_user in chat.users:
             all_users.append({"user": some_user.name, "device": some_user.devices[0]})
 
-        # print(f"Sending message to users [{';'.join([u.name for u in chat.users])}]")
-
         if message is not None:
             encrypted_message = chat.session.encrypt_application_message(message=message)
         else:
@@ -118,7 +114,6 @@ class MLSClient(AbstractApplicationHandler):
         )
         response = requests.post("http://" + self.dir_server + "/message",
                                  data=message_data)
-        # print(response.text)
 
     def get_messages(self, user: str, device: str):
         """
@@ -172,7 +167,6 @@ class MLSClient(AbstractApplicationHandler):
 
         self.send_message_to_group(group_name=group_id, message=name_update_msg.pack())
 
-
     def on_group_welcome(self, session: Session):
         group_name = session.get_state().get_group_context().group_id.decode('ASCII')
         chat = Chat.from_welcome(
@@ -184,6 +178,9 @@ class MLSClient(AbstractApplicationHandler):
         self.chats[group_name] = chat
 
     def on_group_member_added(self, group_id: bytes):
+        pass
+
+    def on_keys_updated(self, group_id: bytes):
         pass
 
     def group_creation(self, group_name: str):
@@ -224,8 +221,6 @@ class MLSClient(AbstractApplicationHandler):
         welcome, add = chat.session.add_member(user, b'0')
         group_op = GroupOperation.from_instance(add)
 
-        # add_payload = chat.session.encrypt_handshake_message(add)
-
         self.send_welcome_to_user(user, welcome)
         chat.users.append(User(user))
         self.send_message_to_group(group_name=group_name, handshake=group_op)
@@ -237,6 +232,12 @@ class MLSClient(AbstractApplicationHandler):
         )
 
         self.send_message_to_group(group_name=group_name, message=name_update_msg.pack())
+
+    def group_update(self, group_name):
+        chat = self.chats[group_name]
+        update_message = chat.session.update()
+        group_op = GroupOperation.from_instance(update_message)
+        self.send_message_to_group(group_name=group_name, handshake=group_op)
 
     def get_recievers(self, chat_identifier: str) -> List[User]:
         """
@@ -292,8 +293,8 @@ class Menu:
 
             self.client.group_add(group_name=group_name, user=user_to_add)
         if menu_item == 7:
-            # Remove member
-            pass
+            group_name = input("Group Name:").strip()
+            self.client.group_update(group_name)
         if menu_item == 8:
             group_name = input("Group Name:").strip()
             self.client.dump_state_image(group_name=group_name)
@@ -315,7 +316,7 @@ def print_main_menu():
     print("4) Send Initkey to Dirserver")
     print("5) Create Group")
     print("6) Add Member")
-    print("7) Remove Member")
+    print("7) Update keys")
     print("8) Dump state")
     print("99) Exit")
     print("+++++++++++++++++++++++++++++++++")

@@ -39,3 +39,8 @@ class InitKeyStore:
             return bytes.fromhex(key)
 
         return None
+
+    def clear_user(self, user):
+        if user in self.keys:
+            self.keys[user] = []
+            self._on_modify()
