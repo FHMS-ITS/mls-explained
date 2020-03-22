@@ -17,6 +17,7 @@ def test_key_store_mock_works():
     assert bob_store.get_private_key(b'1') == b'1'
 
 
+@pytest.mark.dependency(name="test_session_can_be_created_from_welcome")
 def test_session_can_be_created_from_welcome():
     """
     test todo:
@@ -65,6 +66,37 @@ def test_session_can_be_created_from_welcome():
     # compare key schedule secrets
     assert alice_session.get_state().get_key_schedule().get_epoch_secret() == \
            bob_session.get_state().get_key_schedule().get_epoch_secret()
+
+
+# @pytest.mark.dependency(depends=["test_update_message"])
+def test_create_session_with_many_members():
+    alice_store = LocalKeyStoreMock('alice')
+    alice_store.register_keypair(b'999', b'999')
+
+    alice_session = Session.from_empty(alice_store, 'alice', 'test')
+    other_sessions = []
+    other_keystores = []
+
+    many: int = 99
+
+    for i in range(many):
+        other_keystores.append(LocalKeyStoreMock(f'{i}'))
+        other_keystores[-1].register_keypair(str(i).encode('ascii'), str(i).encode('ascii'))
+
+        welcome, add = alice_session.add_member(f'{i}', str(i).encode('ascii'))
+
+        other_sessions.append(Session.from_welcome(welcome, other_keystores[-1], f'{i}'))
+        alice_session.process_add(add_message=add)
+        for session in other_sessions:
+            session.process_add(add_message=add)
+
+    # update_msg = alice_session.update()
+    # for session in other_sessions:
+    #     session.process_update(0,update_msg)
+
+    for session in other_sessions:
+        assert alice_session.get_state().get_tree() == session.get_state().get_tree()
+        assert alice_session.get_state().get_group_context() == session.get_state().get_group_context()
 
 
 @pytest.mark.dependency(name="test_update_message")

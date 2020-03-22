@@ -154,7 +154,7 @@ class State:
 
         # strip private keys
         for node in self._tree.get_nodes():
-            welcome.tree.append(TreeNode(node.get_public_key(), None, None))
+            welcome.tree.append(TreeNode(node.get_public_key(), None, None) if node is not None else None)
 
         # todo: support insert in the middle of a group
         # Pylint currently has a problem with dataclasses
