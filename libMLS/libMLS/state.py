@@ -254,6 +254,7 @@ class State:
 
         self._tree.set_node(node_index=leaf_index * 2, node=TreeNode.from_node_secret(node_secret=node_secret,
                                                                                       cipher_suite=self._cipher_suite))
+
         # pylint: disable=unexpected-keyword-arg
         nodes_out.append(DirectPathNode(public_key=self._tree.get_node(leaf_index * 2).get_public_key(),
                                         encrypted_path_secret=[]))
@@ -295,7 +296,7 @@ class State:
         if last_path_secret is None:
             raise ValueError()
 
-        self._key_schedule.update_key_schedule(last_path_secret, self._context)
+        advance_epoch(self._context, self._key_schedule, last_path_secret)
         return UpdateMessage(direct_path=nodes_out)
 
     def process_update(self, leaf_index: int, message: UpdateMessage) -> None:

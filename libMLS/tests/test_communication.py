@@ -104,9 +104,11 @@ def test_update_message():
 
     # assert that the new, shared secret has been distributed
     assert alice_tree.get_node(1).get_private_key() == bob_tree.get_node(1).get_private_key()
+    assert alice_tree.get_node(1).get_public_key() == bob_tree.get_node(1).get_public_key()
 
     # but make sure that bob does not know alice's private key
     assert bob_tree.get_node(0).get_private_key() is None
+    assert alice_tree.get_node(0).get_public_key() == bob_tree.get_node(0).get_public_key()
 
     # compare tree hashses
     assert alice_tree.get_tree_hash() == bob_tree.get_tree_hash()
@@ -114,6 +116,49 @@ def test_update_message():
     # compare key schedule secrets
     assert alice_session.get_state().get_key_schedule().get_epoch_secret() == \
            bob_session.get_state().get_key_schedule().get_epoch_secret()
+
+    assert alice_session.get_state().get_group_context() == \
+           bob_session.get_state().get_group_context()
+
+
+@pytest.mark.dependency(depends=["test_update_message"])
+def test_double_update():
+    alice_store = LocalKeyStoreMock('alice')
+    alice_store.register_keypair(b'0', b'0')
+
+    bob_store = LocalKeyStoreMock('bob')
+    bob_store.register_keypair(b'1', b'1')
+
+    # setup session
+    alice_session = Session.from_empty(alice_store, 'alice', 'test')
+    welcome, add = alice_session.add_member('bob', b'1')
+    bob_session = Session.from_welcome(welcome, bob_store, 'bob')
+
+    alice_session.process_add(add_message=add)
+    bob_session.process_add(add_message=add)
+
+    update_op1 = GroupOperation(msg_type=GroupOperationType.UPDATE, operation=alice_session.update())
+    cipher1 = alice_session.encrypt_handshake_message(update_op1)
+
+    my_handler = StubHandler()
+    alice_session.process_message(cipher1, my_handler)
+    bob_session.process_message(cipher1, my_handler)
+
+    update_op2 = GroupOperation(msg_type=GroupOperationType.UPDATE, operation=alice_session.update())
+    cipher2 = alice_session.encrypt_handshake_message(update_op2)
+
+    alice_session.process_message(cipher2, my_handler)
+    bob_session.process_message(cipher2, my_handler)
+
+    # compare tree hashses
+    assert alice_session.get_state().get_tree().get_tree_hash() == bob_session.get_state().get_tree().get_tree_hash()
+
+    # compare key schedule secrets
+    assert alice_session.get_state().get_key_schedule().get_epoch_secret() == \
+           bob_session.get_state().get_key_schedule().get_epoch_secret()
+
+    assert alice_session.get_state().get_group_context() == \
+           bob_session.get_state().get_group_context()
 
 
 @pytest.mark.dependency(depends=["test_update_message"])
