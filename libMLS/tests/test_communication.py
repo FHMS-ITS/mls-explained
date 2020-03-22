@@ -2,7 +2,7 @@ import pytest
 from libMLS.abstract_application_handler import AbstractApplicationHandler
 
 from libMLS.local_key_store_mock import LocalKeyStoreMock
-from libMLS.messages import UpdateMessage, WelcomeInfoMessage, AddMessage, GroupOperation
+from libMLS.messages import UpdateMessage, WelcomeInfoMessage, AddMessage, GroupOperation, GroupOperationType
 from libMLS.session import Session
 
 
@@ -117,6 +117,27 @@ def test_update_message():
 
 
 @pytest.mark.dependency(depends=["test_update_message"])
+def test_update_message_with_one_member():
+    alice_store = LocalKeyStoreMock('alice')
+    alice_store.register_keypair(b'0', b'0')
+
+    alice_session = Session.from_empty(alice_store, 'alice', 'test')
+
+    first_hash = alice_session.get_state().get_tree().get_tree_hash()
+    update_op = GroupOperation(msg_type=GroupOperationType.UPDATE, operation=alice_session.update())
+    second_hash = alice_session.get_state().get_tree().get_tree_hash()
+
+    assert second_hash != first_hash
+    cipher = alice_session.encrypt_handshake_message(update_op)
+
+    my_handler = StubHandler()
+    alice_session.process_message(cipher, my_handler)
+    third_hash = alice_session.get_state().get_tree().get_tree_hash()
+
+    assert third_hash == second_hash
+
+
+@pytest.mark.dependency(depends=["test_update_message"])
 def test_update_message_serialized():
     # init user keys
     alice_store = LocalKeyStoreMock('alice')
@@ -171,6 +192,9 @@ class StubHandler(AbstractApplicationHandler):
         pass
 
     def on_group_member_added(self, group_id: bytes):
+        pass
+
+    def on_keys_updated(self, group_id: bytes):
         pass
 
 
