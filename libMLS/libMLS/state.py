@@ -154,7 +154,7 @@ class State:
 
         # strip private keys
         for node in self._tree.get_nodes():
-            welcome.tree.append(TreeNode(node.get_public_key(), None, None))
+            welcome.tree.append(TreeNode(node.get_public_key(), None, None) if node is not None else None)
 
         # todo: support insert in the middle of a group
         # Pylint currently has a problem with dataclasses
@@ -242,7 +242,7 @@ class State:
         # nicht unseren tree borken. Gerade erstzen wir das leaf secret sofort, wenn die update nachricht dann
         # resequenced wird ist der updatende client raus. MLSpp von cisco hat das gleiche problem.
 
-        nodes_in_copath = copath(leaf_index*2, self._tree.get_num_leaves())
+        nodes_in_copath = copath(leaf_index * 2, self._tree.get_num_leaves())
         nodes_out: List[DirectPathNode] = []
         # Corresponds to X=path_secret[0]
         path_secret = os.urandom(16)
@@ -254,9 +254,9 @@ class State:
 
         self._tree.set_node(node_index=leaf_index * 2, node=TreeNode.from_node_secret(node_secret=node_secret,
                                                                                       cipher_suite=self._cipher_suite))
-        # Pylint currently has a problem with dataclasses
+
         # pylint: disable=unexpected-keyword-arg
-        nodes_out.append(DirectPathNode(public_key=self._tree.get_node(leaf_index*2).get_public_key(),
+        nodes_out.append(DirectPathNode(public_key=self._tree.get_node(leaf_index * 2).get_public_key(),
                                         encrypted_path_secret=[]))
 
         last_path_secret = None
@@ -281,18 +281,22 @@ class State:
             # https://git.fh-muenster.de/masterprojekt-mls/implementation/issues/6
             # pylint: disable=unused-variable
             for resolution_node_index in resolution:
-                # Pylint currently has a problem with dataclasses
                 # pylint: disable=unexpected-keyword-arg
                 ciphers.append(HPKECiphertext(ephemeral_key=b'0', cipher_text=path_secret))
 
             # todo: SetupBaseI aus HPKE nutzen https://tools.ietf.org/html/draft-ietf-mls-protocol-07#section-9.3
             # todo: Path secret verschlüsseln
-            # Pylint currently has a problem with dataclasses
             # pylint: disable=unexpected-keyword-arg
             nodes_out.append(DirectPathNode(public_key=self._tree.get_node(node_index).get_public_key(),
                                             encrypted_path_secret=ciphers))
 
-        self._key_schedule.update_key_schedule(last_path_secret, self._context)
+        if len(nodes_in_copath) == 0 and self._tree.get_num_leaves() == 1:
+            last_path_secret = path_secret
+
+        if last_path_secret is None:
+            raise ValueError()
+
+        advance_epoch(self._context, self._key_schedule, last_path_secret)
         return UpdateMessage(direct_path=nodes_out)
 
     def process_update(self, leaf_index: int, message: UpdateMessage) -> None:

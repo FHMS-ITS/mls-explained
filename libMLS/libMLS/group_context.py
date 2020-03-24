@@ -51,3 +51,10 @@ class GroupContext:
         tmp = b"".join([tmp, self.tree_hash])
         tmp = b"".join([tmp, self.confirmed_transcript_hash])
         return tmp
+
+    def __str__(self):
+        return f"GroupContext:\n" \
+            f"\tID:{self.group_id}\n" \
+            f"\tEpoch:{self.epoch}\n" \
+            f"\tConf. THash:{self.confirmed_transcript_hash}\n" \
+            f"\tTreeHash:{self.tree_hash}"

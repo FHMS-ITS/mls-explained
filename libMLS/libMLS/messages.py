@@ -811,7 +811,11 @@ class WelcomeInfoMessage(AbstractMessage):
         # packed_list: List[bytes] = []
         packed_list: bytes = b''
         for node in self.tree:
-            packed_list += pack_dynamic('V', node.pack())
+
+            if node is None:
+                packed_list += pack_dynamic('V', b"NOTHING")
+            else:
+                packed_list += pack_dynamic('V', node.pack())
 
         return packed_list
 
@@ -829,7 +833,11 @@ class WelcomeInfoMessage(AbstractMessage):
         # if there are no nodes in the tree, the raw_nodes list contains just one empty entry
         if raw_nodes != [] and raw_nodes[0] != b'':
             for raw_node in raw_nodes:
-                nodes.append(TreeNode.from_bytes(raw_node))
+
+                if raw_node == b"NOTHING":
+                    nodes.append(None)
+                else:
+                    nodes.append(TreeNode.from_bytes(raw_node))
 
         # pylint: disable=unexpected-keyword-arg
         inst = cls(protocol_version=box[0],
