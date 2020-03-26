@@ -70,13 +70,13 @@ def node_width(num_leaves: int):
     return 2 * (num_leaves - 1) + 1
 
 
-def root(num_nodes: int) -> int:
+def root(num_leafs: int) -> int:
     """
     The index of the root node of a tree with n leaves
-    :param num_nodes:
+    :param num_leafs:
     :return:
     """
-    width = node_width(num_nodes)
+    width = node_width(num_leafs)
     return (1 << log2(width)) - 1
 
 
@@ -127,19 +127,19 @@ def parent_step(node_index: int):
     return (node_index | (1 << node_level)) ^ (b << (node_level + 1))
 
 
-def parent(node_index: int, num_nodes: int):
+def parent(node_index: int, num_leafs: int):
     """
     The parent of a node.  As with the right child calculation, have
     to walk back until the parent is within the range of the tree.
     :param node_index:
-    :param num_nodes:
+    :param num_leafs:
     :return:
     """
-    if node_index == root(num_nodes):
+    if node_index == root(num_leafs):
         return node_index
 
     parent_index = parent_step(node_index)
-    while parent_index >= node_width(num_nodes):
+    while parent_index >= node_width(num_leafs):
         parent_index = parent_step(parent_index)
     return parent_index
 
