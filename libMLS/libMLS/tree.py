@@ -70,10 +70,13 @@ class Tree:
 
         return self._nodes[index]
 
-    def get_root(self) -> TreeNode:
+    def get_root(self) -> Optional[TreeNode]:
         if self._nodes is None:
             return None
 
+        return self._nodes[self.get_root_index()]
+
+    def get_root_index(self):
         return root(self.get_num_leaves())
 
     def get_nodes(self) -> List[Optional[TreeNode]]:
@@ -139,10 +142,7 @@ class Tree:
 
         :return: treeHash
         """
-        if self.get_root() is None:
-            raise IndexError()
-
-        return self._get_node_hash(node_index=self.get_root())
+        return self._get_node_hash(node_index=self.get_root_index())
 
     def _get_node_hash(self, node_index: int) -> bytes:
         """

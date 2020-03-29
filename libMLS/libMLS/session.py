@@ -164,7 +164,6 @@ class Session:
         :param leaf_index: the leaf which gets updated
         :param update_message: the updateMessage
         """
-        # todo: We still do not know which leaf to update with this add message
         self._state.process_update(leaf_index=leaf_index, message=update_message)
 
     def encrypt_application_message(self, message: bytes) -> MLSCiphertext:

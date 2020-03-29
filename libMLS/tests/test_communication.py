@@ -1,9 +1,13 @@
+from typing import List
+
 import pytest
 from libMLS.abstract_application_handler import AbstractApplicationHandler
 
 from libMLS.local_key_store_mock import LocalKeyStoreMock
 from libMLS.messages import UpdateMessage, WelcomeInfoMessage, AddMessage, GroupOperation, GroupOperationType
 from libMLS.session import Session
+
+from libMLS.tree_math import parent, root
 
 
 def test_key_store_mock_works():
@@ -68,35 +72,47 @@ def test_session_can_be_created_from_welcome():
            bob_session.get_state().get_key_schedule().get_epoch_secret()
 
 
-# @pytest.mark.dependency(depends=["test_update_message"])
-def test_create_session_with_many_members():
-    alice_store = LocalKeyStoreMock('alice')
-    alice_store.register_keypair(b'999', b'999')
+def create_session_with_n_members(num_members: int) -> List[Session]:
+    other_keystores = [LocalKeyStoreMock(f'{0}')]
+    other_keystores[-1].register_keypair(str(0).encode('ascii'), str(0).encode('ascii'))
+    other_sessions = [Session.from_empty(other_keystores[0], '0', 'teeest')]
 
-    alice_session = Session.from_empty(alice_store, 'alice', 'test')
-    other_sessions = []
-    other_keystores = []
-
-    many: int = 99
-
-    for i in range(many):
+    for i in range(1, num_members, 1):
         other_keystores.append(LocalKeyStoreMock(f'{i}'))
         other_keystores[-1].register_keypair(str(i).encode('ascii'), str(i).encode('ascii'))
 
-        welcome, add = alice_session.add_member(f'{i}', str(i).encode('ascii'))
+        welcome, add = other_sessions[0].add_member(f'{i}', str(i).encode('ascii'))
 
         other_sessions.append(Session.from_welcome(welcome, other_keystores[-1], f'{i}'))
-        alice_session.process_add(add_message=add)
         for session in other_sessions:
             session.process_add(add_message=add)
 
-    # update_msg = alice_session.update()
-    # for session in other_sessions:
-    #     session.process_update(0,update_msg)
+    return other_sessions
 
-    for session in other_sessions:
-        assert alice_session.get_state().get_tree() == session.get_state().get_tree()
-        assert alice_session.get_state().get_group_context() == session.get_state().get_group_context()
+
+@pytest.mark.dependency(name="test_create_session_with_many_members")
+def test_create_session_with_many_members():
+    for i in range(3, 10, 1):
+        other_sessions = create_session_with_n_members(i)
+
+        for session in other_sessions:
+            assert other_sessions[0].get_state().get_tree() == session.get_state().get_tree()
+            assert other_sessions[0].get_state().get_group_context() == session.get_state().get_group_context()
+
+
+@pytest.mark.dependency(depends=["test_create_session_with_many_members"])
+def test_update_session_with_many_members():
+
+    for i in range(1, 10, 1):
+        other_sessions = create_session_with_n_members(i)
+
+        update_msg = other_sessions[0].update()
+        for session in other_sessions[1:]:
+            session.process_update(0, update_msg)
+
+        for session in other_sessions:
+            assert other_sessions[0].get_state().get_tree() == session.get_state().get_tree()
+            assert other_sessions[0].get_state().get_group_context() == session.get_state().get_group_context()
 
 
 @pytest.mark.dependency(name="test_update_message")
