@@ -1,7 +1,9 @@
+import functools
 from typing import List
 
 import pytest
 from libMLS.abstract_application_handler import AbstractApplicationHandler
+from libMLS.dot_dumper import DotDumper
 
 from libMLS.local_key_store_mock import LocalKeyStoreMock
 from libMLS.messages import UpdateMessage, WelcomeInfoMessage, AddMessage, GroupOperation, GroupOperationType
@@ -102,7 +104,6 @@ def test_create_session_with_many_members():
 
 @pytest.mark.dependency(depends=["test_create_session_with_many_members"])
 def test_update_session_with_many_members():
-
     for i in range(1, 10, 1):
         other_sessions = create_session_with_n_members(i)
 
@@ -113,6 +114,44 @@ def test_update_session_with_many_members():
         for session in other_sessions:
             assert other_sessions[0].get_state().get_tree() == session.get_state().get_tree()
             assert other_sessions[0].get_state().get_group_context() == session.get_state().get_group_context()
+
+
+@pytest.mark.dependency(depends=["test_create_session_with_many_members"])
+def test_add_after_update_with_many_members():
+    for i in range(1, 10, 1):
+        other_sessions = create_session_with_n_members(i)
+
+        update_msg = other_sessions[0].update()
+        for session in other_sessions[1:]:
+            session.process_update(0, update_msg)
+
+        alice_store = LocalKeyStoreMock('alice')
+
+        alice_store.register_keypair(b'alice', b'alice')
+        welcome, add = other_sessions[len(other_sessions) - 1].add_member('alice', b'1')
+        alice_session = Session.from_welcome(welcome, alice_store, 'alice')
+        alice_session.process_add(add)
+
+        for session in other_sessions:
+            session.process_add(add)
+
+        for session in other_sessions:
+            assert other_sessions[0].get_state().get_tree() == session.get_state().get_tree()
+            assert other_sessions[0].get_state().get_group_context() == session.get_state().get_group_context()
+
+        print(f"other {other_sessions[0].get_state().get_tree()}")
+        print(f"alice {alice_session.get_state().get_tree()}")
+        assert alice_session.get_state().get_tree() == other_sessions[0].get_state().get_tree()
+
+
+@pytest.mark.dependency(depends=["test_create_session_with_many_members"])
+def test_dot_dumper_equals():
+    for i in range(1, 10, 1):
+        other_sessions = create_session_with_n_members(i)
+
+        all_dots = [DotDumper(session).dump_state_dot() for session in other_sessions]
+        for dot in all_dots[1:]:
+            assert all_dots[0] == dot
 
 
 @pytest.mark.dependency(name="test_update_message")
