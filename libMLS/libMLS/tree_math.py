@@ -70,13 +70,13 @@ def node_width(num_leaves: int):
     return 2 * (num_leaves - 1) + 1
 
 
-def root(num_nodes: int) -> int:
+def root(num_leafs: int) -> int:
     """
     The index of the root node of a tree with n leaves
-    :param num_nodes:
+    :param num_leafs:
     :return:
     """
-    width = node_width(num_nodes)
+    width = node_width(num_leafs)
     return (1 << log2(width)) - 1
 
 
@@ -127,19 +127,19 @@ def parent_step(node_index: int):
     return (node_index | (1 << node_level)) ^ (b << (node_level + 1))
 
 
-def parent(node_index: int, num_nodes: int):
+def parent(node_index: int, num_leafs: int):
     """
     The parent of a node.  As with the right child calculation, have
     to walk back until the parent is within the range of the tree.
     :param node_index:
-    :param num_nodes:
+    :param num_leafs:
     :return:
     """
-    if node_index == root(num_nodes):
+    if node_index == root(num_leafs):
         return node_index
 
     parent_index = parent_step(node_index)
-    while parent_index >= node_width(num_nodes):
+    while parent_index >= node_width(num_leafs):
         parent_index = parent_step(parent_index)
     return parent_index
 
@@ -160,34 +160,38 @@ def sibling(node_index: int, num_nodes: int):
     return parent_index
 
 
-def direct_path(node_index: int, num_nodes: int) -> List[int]:
+def direct_path(node_index: int, num_leafs: int) -> List[int]:
     """
     The direct path of a node, ordered from the root
     down, not including the root or the terminal node
     :param node_index:
-    :param num_nodes:
+    :param num_leafs:
     :return:
     """
     path = []
-    parent_index = parent(node_index, num_nodes)
-    root_index = root(num_nodes)
+    parent_index = parent(node_index, num_leafs)
+    root_index = root(num_leafs)
     while parent_index != root_index:
         path.append(parent_index)
-        parent_index = parent(parent_index, num_nodes)
+        parent_index = parent(parent_index, num_leafs)
     return path
 
 
-def copath(nodex_index, num_leaves):
+def copath(node_index, num_leaves):
     """
     The copath of the node is the siblings of the nodes on its direct
     path (including the node itself)
-    :param nodex_index:
+    :param node_index:
     :param num_leaves:
     :return:
     """
-    path = direct_path(nodex_index, num_leaves)
-    if nodex_index != sibling(nodex_index, num_leaves):
-        path.append(nodex_index)
+    path = direct_path(node_index, num_leaves)
+    if node_index != sibling(node_index, num_leaves):
+        # this diverges from the reference implementation, which appends the node index to the list. This yield a list,
+        # which is NOT ordered from leaf to root, but from a list of the form [ parent(leaf), ..., root, leaf]. F.e.
+        # for a tree with 5 members the copath of node 0 is [5, 8, 2] (because the direct path is [1,3]), but SHOULD
+        # be [2,5,8]
+        path = [node_index] + path
 
     return [sibling(y, num_leaves) for y in path]
 

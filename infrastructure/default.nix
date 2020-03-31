@@ -16,7 +16,7 @@ let
         src = ./.;
 
         propagatedBuildInputs = with python37Packages; [ flask requests libMLS pytestrunner ];
-        checkInputs = with python37Packages; [ pytest pylint pytest-pylint pytestcov ];
+        checkInputs = with python37Packages; [ pytest pylint pytest-pylint ];
 
         preCheck = ''
         export PYLINTRC=$src/.pylintrc;

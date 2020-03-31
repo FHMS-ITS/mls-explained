@@ -167,11 +167,11 @@ def test_plaintext_application_message():
 
     assert MLSPlaintext.from_bytes(message.pack()) == message
 
-def test_weird_plaintext():
 
+def test_weird_plaintext():
     pytest.skip()
     expected_cipher = b'\x00\x00\x00\x00\x00\x00\x00\x16\x01\x00\x00\x00\x11' \
-               b'\x00\x00\x00\x01\x00\x00\x00\x041234\x00\x00\x00\x010'
+                      b'\x00\x00\x00\x01\x00\x00\x00\x041234\x00\x00\x00\x010'
 
     my_bytes = bytes.fromhex("000000036d65700000000001000000013000000001300000001e000000"
                              "000000001601000000110000000100000004313233340000000130")

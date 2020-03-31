@@ -8,7 +8,7 @@ from libMLS.tree_node import TreeNode
 
 
 def _node_to_dot(node: TreeNode, node_index: int) -> str:
-    return f"\"Index: {node_index}\\npub: {node.get_public_key().hex() if node is not None else 'None'}\""
+    return f"\"Index: {node_index}\\npub: {node.get_public_key().hex() if node is not None else 'Blank'}\""
 
 
 class DotDumper:
@@ -23,11 +23,12 @@ class DotDumper:
 
         tree = self._session.get_state().get_tree()
         nodes = tree.get_nodes()
+        num_leafs = tree.get_num_leaves()
 
         for index, node in enumerate(nodes):
             dot_contents += f"{_node_to_dot(node,index)}[style=filled fillcolor=transparent];\n"
 
-            parent_node = parent(index, len(nodes))
+            parent_node = parent(index, num_leafs)
 
             if parent_node != index and parent_node < len(nodes):
                 dot_contents += f"\t{_node_to_dot(node, index)} -> {_node_to_dot(nodes[parent_node], parent_node)};\n"

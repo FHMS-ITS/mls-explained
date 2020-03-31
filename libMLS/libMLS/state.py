@@ -1,6 +1,6 @@
 import os
 
-from typing import Optional, List
+from typing import Optional, List, Dict
 
 from libMLS.cipher_suite import CipherSuite
 from libMLS.crypto import hkdf_expand_label
@@ -236,7 +236,7 @@ class State:
         :return: UpdateMessage
         """
 
-        # TODO: ACTHUNG ACHTUNG RESEQUENCING
+        # TODO: ACHTUNG ACHTUNG RESEQUENCING
         # DIESE METHODE IST NICHT RESEQUENCING SICHER
         # Gegensätzlich zum RFC müssten wir auch das leaf secret mit versenden, damit wir im resequencing fall
         # nicht unseren tree borken. Gerade erstzen wir das leaf secret sofort, wenn die update nachricht dann
@@ -274,8 +274,8 @@ class State:
                                 node=TreeNode.from_node_secret(node_secret=node_secret,
                                                                cipher_suite=self._cipher_suite))
 
-            # encrypt the path secrect for the nodes in the copath
-            resolution: List[int] = resolve(self._tree.get_nodes(), conode_index, self._tree.get_num_nodes())
+            # encrypt the path secret for the nodes in the copath
+            resolution: List[int] = resolve(self._tree.get_nodes(), conode_index, self._tree.get_num_leaves())
             ciphers: List[HPKECiphertext] = []
             # todo: This loop must be updated with Issue !6
             # https://git.fh-muenster.de/masterprojekt-mls/implementation/issues/6
@@ -299,6 +299,7 @@ class State:
         advance_epoch(self._context, self._key_schedule, last_path_secret)
         return UpdateMessage(direct_path=nodes_out)
 
+    # pylint: disable=too-many-locals
     def process_update(self, leaf_index: int, message: UpdateMessage) -> None:
         """
         RFC Section 5.5 Synchronizing Views of the Tree
@@ -336,23 +337,30 @@ class State:
         """
 
         # todo: more sanity checks
-        if len(direct_path(leaf_index * 2, self._tree.get_num_nodes())) != len(message.direct_path) - 1:
-            raise RuntimeError()
+        len_local_path = len(direct_path(leaf_index * 2, self._tree.get_num_leaves()))
+        len_received_path = len(message.direct_path)
+        # the direct path does not include the root or the target node, so we have to add 2 to the expected count
+        if len_local_path + 2 != len_received_path:
+            raise RuntimeError(
+                f"Len of direct path to target leaf is {len_local_path} vs received path of len {len_received_path}")
 
         if message.direct_path[0].encrypted_path_secret:
             raise RuntimeError()
 
-        # overwrite leaf
-        self._tree.set_node(node_index=leaf_index * 2, node=TreeNode(message.direct_path[0].public_key, None, None))
+        # We do not update the tree immediately, as we may need the old secrets to unpack further nodes. We rather
+        # store them and apply them after unpacking all nodes.
+        nodes_to_update: Dict[int, TreeNode] = {
+            leaf_index * 2: TreeNode(message.direct_path[0].public_key, None, None)
+        }
 
         last_node_index = leaf_index * 2
         last_path_secret = None
         for entry in message.direct_path[1:]:
-            current_node_index = parent(last_node_index, self._tree.get_num_nodes())
+            current_node_index = parent(last_node_index, self._tree.get_num_leaves())
 
-            last_node_sibling_index = sibling(last_node_index, self._tree.get_num_nodes())
+            last_node_sibling_index = sibling(current_node_index, self._tree.get_num_leaves())
             last_node_sibling_resolution = resolve(self._tree.get_nodes(), last_node_sibling_index,
-                                                   self._tree.get_num_nodes())
+                                                   self._tree.get_num_leaves())
 
             computed_node: TreeNode = TreeNode(entry.public_key, None, None)
             for resolution_node_index in last_node_sibling_resolution:
@@ -372,10 +380,15 @@ class State:
                     cipher_suite=self._cipher_suite)
 
                 if computed_node.get_public_key() != entry.public_key:
-                    raise RuntimeError()
+                    raise RuntimeError("Received path secret does not match the received public key.")
 
                 break
 
-            self._tree.set_node(current_node_index, computed_node)
+            nodes_to_update[current_node_index] = computed_node
+            last_node_index = current_node_index
+
+        # apply new nodes
+        for index, node in nodes_to_update.items():
+            self._tree.set_node(index, node)
 
         advance_epoch(self._context, self._key_schedule, last_path_secret)
