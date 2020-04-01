@@ -23,8 +23,9 @@ class DotImage:
     name: str
 
 class DotWidget(QWidget):
-    def __init__(self, path:str):
+    def __init__(self, path:str, gui):
         super().__init__()
+        self.gui = gui
 
         self.label = QLabel(f"Dot Dump:")
         self.display = QSvgWidget()
@@ -33,6 +34,8 @@ class DotWidget(QWidget):
         self.layout = QVBoxLayout()
         self.layout.addWidget(self.label)
         self.layout.addWidget(self.display)
+
+        self.setWindowTitle(self.gui.windowTitle())
 
         self.setLayout(self.layout)
 
@@ -60,7 +63,7 @@ class MessageWidget(QWidget):
 
     def button_function(self):
         if self.message.state_path is not "":
-            self.dot_widget = DotWidget(self.message.state_path)
+            self.dot_widget = DotWidget(self.message.state_path, self.gui)
             self.dot_widget.move(self.gui.pos())
             self.dot_widget.show()
         else:
@@ -285,6 +288,13 @@ class CreateChatWindow(QWidget):
             self.gui.status_bar.showMessage("There must be a Dirserver running to create a Chat")
             self.message_box.show()
             self.close()
+        except NoKeysAvailableException:
+            self.message_box = QMessageBox()
+            self.message_box.setText("There must be Init Keys on the Dirserver. Please add them first")
+            self.message_box.move(self.gui.pos())
+            self.gui.status_bar.showMessage("There must be Init Keys on the Dirserver. Please add them first")
+            self.message_box.show()
+            self.close()
 
     def cancelButtonFunction(self):
         self.close()
@@ -480,13 +490,7 @@ class SetUpWindow(QWidget):
         else:
             self.user = self.user_name_line_edit.text()
 
-        if self.device_name_line_edit.text() == "":
-            self.message_box2 = QMessageBox()
-            self.message_box2.setText("Please add a device name")
-            self.message_box2.show()
-            checks = False
-        else:
-            self.device = self.device_name_line_edit.text()
+        self.device = "phone"
 
         if checks:
             self.close()
@@ -519,7 +523,7 @@ class SetUpWindow(QWidget):
         self.close()
 
     def retrieve_inputs(self):
-        return self.auth_server, self.dir_server, self.user, self.device
+        return self.auth_server, self.dir_server, self.user, "phone"
 
     def __init__(self, auth_server:str, dir_server:str, user:str, device:str):
         super().__init__()
@@ -541,9 +545,9 @@ class SetUpWindow(QWidget):
         self.user_name_line_edit = QLineEdit()
         self.user_name_line_edit.setText(self.user)
 
-        self.device_name_label = QLabel("Device")
-        self.device_name_line_edit = QLineEdit()
-        self.device_name_line_edit.setText(self.device)
+        #self.device_name_label = QLabel("Device")
+        #self.device_name_line_edit = QLineEdit()
+        #self.device_name_line_edit.setText(self.device)
 
         self.okay_button = QPushButton("Okay")
         self.okay_button.clicked.connect(self.okayButtonFunction)
@@ -554,7 +558,7 @@ class SetUpWindow(QWidget):
         self.fbox.addRow(self.dir_server_label, self.dir_server_line_edit)
         self.fbox.addRow(self.auth_server_label, self.auth_server_line_edit)
         self.fbox.addRow(self.user_name_label, self.user_name_line_edit)
-        self.fbox.addRow(self.device_name_label, self.device_name_line_edit)
+        #self.fbox.addRow(self.device_name_label, self.device_name_line_edit)
         self.fbox.addRow(self.okay_button, self.cancel_button)
 
         self.setLayout(self.fbox)
