@@ -59,4 +59,4 @@ class KeyService(AbstractKeystore):
 
     def clear_data(self, user_name: str, device_name: str) -> None:
         params = {"user": user_name, "device": device_name}
-        requests.delete("http://" + self._dir_server_url + "/clear_information", params=params)
+        requests.delete("http://" + self._dir_server_url + "/clear", params=params)
