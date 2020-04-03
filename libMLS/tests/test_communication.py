@@ -1,5 +1,5 @@
 import functools
-from typing import List
+from typing import List, Union, Dict
 
 import pytest
 from libMLS.abstract_application_handler import AbstractApplicationHandler
@@ -92,6 +92,36 @@ def create_session_with_n_members(num_members: int) -> List[Session]:
     return other_sessions
 
 
+def create_session_with_n_members_batched(num_members: int) -> List[Session]:
+    other_keystores = [LocalKeyStoreMock(f'{0}')]
+    other_keystores[-1].register_keypair(str(0).encode('ascii'), str(0).encode('ascii'))
+    other_sessions = [Session.from_empty(other_keystores[0], '0', 'teeest')]
+
+    messages_per_session: Dict[int, List[Union[AddMessage, WelcomeInfoMessage]]] = {0: []}
+
+    for i in range(1, num_members, 1):
+        other_keystores.append(LocalKeyStoreMock(f'{i}'))
+        other_keystores[-1].register_keypair(str(i).encode('ascii'), str(i).encode('ascii'))
+
+        welcome, add = other_sessions[0].add_member(f'{i}', str(i).encode('ascii'))
+        messages_per_session[i] = [welcome]
+
+        for key in messages_per_session.keys():
+            messages_per_session[key].append(add)
+
+    for index, messages in messages_per_session.items():
+
+        if index != 0:
+            session = Session.from_welcome(messages[0], other_keystores[index], f'{index}')
+            messages = messages[1:]
+            other_sessions.append(session)
+
+        for message in messages:
+            other_sessions[index].process_add(message)
+
+    return other_sessions
+
+
 @pytest.mark.dependency(name="test_create_session_with_many_members")
 def test_create_session_with_many_members():
     for i in range(3, 10, 1):
@@ -110,6 +140,17 @@ def test_update_session_with_many_members():
         update_msg = other_sessions[0].update()
         for session in other_sessions[1:]:
             session.process_update(0, update_msg)
+
+        for session in other_sessions:
+            assert other_sessions[0].get_state().get_tree() == session.get_state().get_tree()
+            assert other_sessions[0].get_state().get_group_context() == session.get_state().get_group_context()
+
+
+@pytest.mark.dependency(depends=["test_create_session_with_many_members"])
+@pytest.mark.xfail(reason="Batch add does not work in protocol version 7")
+def test_batch_create_session_with_many_members():
+    for i in range(1, 10, 1):
+        other_sessions = create_session_with_n_members_batched(i)
 
         for session in other_sessions:
             assert other_sessions[0].get_state().get_tree() == session.get_state().get_tree()
@@ -139,8 +180,6 @@ def test_add_after_update_with_many_members():
             assert other_sessions[0].get_state().get_tree() == session.get_state().get_tree()
             assert other_sessions[0].get_state().get_group_context() == session.get_state().get_group_context()
 
-        print(f"other {other_sessions[0].get_state().get_tree()}")
-        print(f"alice {alice_session.get_state().get_tree()}")
         assert alice_session.get_state().get_tree() == other_sessions[0].get_state().get_tree()
 
 
