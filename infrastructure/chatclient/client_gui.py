@@ -137,13 +137,18 @@ class ChatMenuBar(QToolBar):
         self.addWidget(self.protocol_check_box)
 
     def add_user_button_function(self):
-        if self.gui.active_chat is not None:
-            self.add_user_window = AddUserWindow(self.client, self.gui)
-            self.add_user_window.move(self.gui.pos())
-            self.add_user_window.show()
+        if not self.gui.enforce_refresh:
+            if self.gui.active_chat is not None:
+                self.add_user_window = AddUserWindow(self.client, self.gui)
+                self.add_user_window.move(self.gui.pos())
+                self.add_user_window.show()
+            else:
+                self.no_chat_selected_message()
         else:
-            self.no_chat_selected_message()
-
+            self.message_box = QMessageBox()
+            self.message_box.setText("Please refresh before adding another user!")
+            self.message_box.move(self.gui.pos())
+            self.message_box.show()
 
     def show_state_button_function(self):
         if self.gui.active_chat is not None:
@@ -230,7 +235,11 @@ class AddUserWindow(QWidget):
             if self.gui.active_chat is not None:
                 user_name = self.user_name_line_edit.text()
                 self.client.group_add(self.gui.active_chat.name, user_name)
+                self.gui.enforce_refresh = True
                 self.gui.status_bar.showMessage("Welcome Message sent to Dirserver. Refresh!")
+                self.message_box = QMessageBox()
+                self.message_box.setText("Welcome Message sent to Dirserver. Refresh before adding another user!")
+                self.message_box.move(self.gui.pos())
                 self.close()
         except NoKeysAvailableException:
             self.message_box = QMessageBox()
@@ -430,6 +439,8 @@ class GUI(QMainWindow):
         super().__init__()
         self.client = client
 
+        self.enforce_refresh = False
+
         self.active_chat = None
 
         self.toolbar = MainMenuBar(client, self)
@@ -474,6 +485,8 @@ class GUI(QMainWindow):
         self.amount_of_new_messages_message_box.show()
 
         self.status_bar.showMessage(f"{amount_of_new_messages} new messages received")
+
+        self.enforce_refresh = False
 
 class SetUpWindow(QWidget):
     def okayButtonFunction(self):
