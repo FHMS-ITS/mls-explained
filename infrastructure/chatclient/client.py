@@ -1,7 +1,6 @@
 """
 MLS CLient
 """
-import argparse
 import json
 from typing import List, Dict, Optional
 
@@ -12,32 +11,37 @@ from libMLS.messages import WelcomeInfoMessage, MLSCiphertext, GroupOperation
 from libMLS.session import Session
 
 from chatclient.chat import Chat
+from chatclient.message import Message
 from chatclient.key_service import KeyService
 from chatclient.user import User
 
 from .chat_protocol import ChatProtocolMessage, ChatMessage, ChatUserListMessage, ChatProtocolMessageType
 
 
-def check_auth_server(ip_address: str) -> bool:
-    """
-    checks a given ip_address for a running MLS Auth Server
-    """
-    response = requests.get("http://" + ip_address + "/")
-    return response.text == "MLS AUTH SERVER"
-
-
-def check_dir_server(ip_address: str) -> bool:
-    """
-    checks a given ip_address for a running MLS Dir Server
-    """
-    response = requests.get("http://" + ip_address + "/")
-    return response.text == "MLS DIR SERVER"
-
-
 class MLSClient(AbstractApplicationHandler):
     """
     Client of the MLS Infrastructure
     """
+    def check_auth_server(self) -> bool:
+        """
+        checks a given ip_address for a running MLS Auth Server
+        """
+        try:
+            response = requests.get("http://" + self.auth_server + "/")
+            return response.text == "MLS AUTH SERVER"
+        except requests.exceptions.ConnectionError:
+            raise ConnectionError
+
+
+    def check_dir_server(self) -> bool:
+        """
+        checks a given ip_address for a running MLS Dir Server
+        """
+        try:
+            response = requests.get("http://" + self.dir_server + "/")
+            return response.text == "MLS DIR SERVER"
+        except requests.exceptions.ConnectionError:
+            raise ConnectionError
 
     def __init__(self, auth_server: str, dir_server: str, user: str, device: str):
         super().__init__()
@@ -47,6 +51,7 @@ class MLSClient(AbstractApplicationHandler):
         self.device = device
         self.chats: Dict[str, Chat] = {}
         self.keystore = KeyService(user, dir_server)
+        self.keystore.clear_data(self.user, self.device)
 
     def get_auth_key(self, user: str, device: str):
         """
@@ -92,67 +97,92 @@ class MLSClient(AbstractApplicationHandler):
         :param handshake:
         :param message: The Message itself
         """
+        try:
+            if message is not None and handshake is not None or handshake is None and message is None:
+                raise ValueError("Specify either a handshake or an app message")
 
-        if message is not None and handshake is not None or handshake is None and message is None:
-            raise ValueError("Specify either a handshake or an app message")
+            chat = self.chats[group_name]
 
-        chat = self.chats[group_name]
-        all_users = []
-        for some_user in chat.users:
-            all_users.append({"user": some_user.name, "device": some_user.devices[0]})
+            all_users = []
+            for some_user in chat.users:
+                all_users.append({"user": some_user.name, "device": some_user.devices[0]})
 
-        if message is not None:
-            encrypted_message = chat.session.encrypt_application_message(message=message)
-        else:
-            encrypted_message = chat.session.encrypt_handshake_message(group_op=handshake)
+            # print(f"Sending message to users [{';'.join([u.name for u in chat.users])}]")
+            if message is not None:
+                encrypted_message = chat.session.encrypt_application_message(message=message)
+            else:
+                encrypted_message = chat.session.encrypt_handshake_message(group_op=handshake)
 
-        message_data = json.dumps(
-            {
-                "receivers": all_users,
-                "message": {"message": encrypted_message.pack().hex(), "is_welcome": False}
-            }
-        )
-        response = requests.post("http://" + self.dir_server + "/message",
-                                 data=message_data)
+            message_data = json.dumps(
+                {
+                    "receivers": all_users,
+                    "message": {"message": encrypted_message.pack().hex(), "is_welcome": False}
+                }
+            )
+            response = requests.post("http://" + self.dir_server + "/message",
+                                     data=message_data)
+            # print(response.text)
+        except requests.exceptions.ConnectionError:
+            raise ConnectionError
 
     def get_messages(self, user: str, device: str):
         """
         Requests messages from dirserver using own identity
         :return:
         """
-        params = {"user": user, "device": device}
-        response = requests.get("http://" + self.dir_server + "/message", params=params)
+        try:
+            params = {"user": user, "device": device}
+            response = requests.get("http://" + self.dir_server + "/message", params=params)
 
-        # print(response.content)
+            # print(response.content)
 
-        if response.status_code != 200:
-            raise RuntimeError(f'GetMessage status code {response.status_code}')
+            if response.status_code != 200:
+                raise RuntimeError(f'GetMessage status code {response.status_code}')
 
-        messages: Dict = json.loads(response.content)
-        print(f"Got {len(messages)} messages!")
-        for message in messages:
+            messages: Dict = json.loads(response.content)
+            print(f"Got {len(messages)} messages!")
 
-            message_wrapper = message['message']
-            is_welcome: bool = message_wrapper['is_welcome']
-            message_content: bytes = bytes.fromhex(message_wrapper['message'])
+            for message in messages:
+                print(message)
+                message_wrapper = message['message']
+                is_welcome: bool = message_wrapper['is_welcome']
+                message_content: bytes = bytes.fromhex(message_wrapper['message'])
 
-            if is_welcome:
-                session: Session = Session.from_welcome(WelcomeInfoMessage.from_bytes(message_content), self.keystore,
-                                                        self.user)
-                chat_name = session.get_state().get_group_context().group_id.decode('ASCII')
-                self.chats[chat_name] = Chat.from_welcome([], user, session)
-                print("Got added to group " + chat_name)
-                continue
+                if is_welcome:
+                    session: Session = Session.from_welcome(WelcomeInfoMessage.from_bytes(message_content), self.keystore,
+                                                            self.user)
+                    chat_name = session.get_state().get_group_context().group_id.decode('ASCII')
+                    self.chats[chat_name] = Chat.from_welcome([], chat_name, session)
+                    print("Got added to group " + chat_name)
+                    continue
 
-            name = Session.get_groupid_from_cipher(data=message_content).decode('UTF-8')
-            self.chats[name].session.process_message(message=MLSCiphertext.from_bytes(message_content), handler=self)
+                name = Session.get_groupid_from_cipher(data=message_content).decode('UTF-8')
+                self.chats[name].session.process_message(message=MLSCiphertext.from_bytes(message_content), handler=self)
+            return len(messages)
+        except requests.exceptions.ConnectionError:
+            raise ConnectionError
 
     def on_application_message(self, application_data: bytes, group_id: str):
+
         msg = ChatProtocolMessage.from_bytes(application_data)
 
         if isinstance(msg.contents, ChatMessage):
+
+            message = Message(description="Application Message:",
+                              message=msg.contents.message,
+                              protocol=False)
+            message.state_path = self.dump_state_image(group_id)
+
+            self.chats[group_id].messages.append(message)
             print(f"Received Message in Group {group_id}:\n{msg.contents.message}")
         elif isinstance(msg.contents, ChatUserListMessage):
+            users_string = ", ".join(msg.contents.user_names)
+            message = Message(description="User List:",
+                              message=users_string,
+                              protocol=True)
+            message.state_path = self.dump_state_image(group_id)
+
+            self.chats[group_id].messages.append(message)
             self.chats[group_id].users = [User(name) for name in msg.contents.user_names]
             print(f"Updated members of group {group_id}: {';'.join([user.name for user in self.chats[group_id].users])}")
         else:
@@ -160,6 +190,7 @@ class MLSClient(AbstractApplicationHandler):
 
     def send_chat_message(self, message: str, group_id: str):
         # pylint: disable=unexpected-keyword-arg
+
         name_update_msg = ChatProtocolMessage(
             msg_type=ChatProtocolMessageType.MESSAGE,
             contents=ChatMessage(message=message)
@@ -168,20 +199,40 @@ class MLSClient(AbstractApplicationHandler):
         self.send_message_to_group(group_name=group_id, message=name_update_msg.pack())
 
     def on_group_welcome(self, session: Session):
-        group_name = session.get_state().get_group_context().group_id.decode('ASCII')
+
+        groupname = session.get_state().get_group_context().group_id.decode('ASCII')
         chat = Chat.from_welcome(
             chat_users=[],
-            username=self.user,
+            groupname=groupname,
             session=session,
         )
 
-        self.chats[group_name] = chat
+        self.chats[groupname] = chat
+
+        message = Message(description="Welcome Message:",
+                          message=groupname,
+                          protocol=True)
+        message.state_path = self.dump_state_image(groupname)
+
+        self.chats[groupname].messages.append(message)
 
     def on_group_member_added(self, group_id: bytes):
-        pass
+        group_name = group_id.decode('ASCII')
+        message = Message(description="Group Member Added!",
+                          message=group_name,
+                          protocol=True)
+        message.state_path = self.dump_state_image(group_name)
+
+        self.chats[group_name].messages.append(message)
 
     def on_keys_updated(self, group_id: bytes):
-        pass
+        group_name = group_id.decode('ASCII')
+        message = Message(description="Updated Keys:",
+                          message=group_name,
+                          protocol=True)
+        message.state_path = self.dump_state_image(group_name)
+
+        self.chats[group_name].messages.append(message)
 
     def group_creation(self, group_name: str):
         """
@@ -199,7 +250,19 @@ class MLSClient(AbstractApplicationHandler):
         # Send welcome messaged directly to the member added first
 
         # Add further Members with group_add
-        self.chats[group_name] = Chat.from_empty(User(self.user), group_name, self.keystore)
+        try:
+            print(group_name)
+            self.chats[group_name] = Chat.from_empty(User(self.user), group_name, self.keystore)
+            print(self.chats[group_name])
+            message = Message(description="Dummy Message: Group Created",
+                              message=group_name,
+                              protocol=True)
+            message.state_path = self.dump_state_image(group_name)
+
+            self.chats[group_name].messages.append(message)
+        except requests.exceptions.ConnectionError:
+            raise ConnectionError()
+
 
     def group_add(self, group_name: str, user: str):
         """
@@ -215,29 +278,32 @@ class MLSClient(AbstractApplicationHandler):
         # update state(every member)
 
         # send welcome message
+        try:
+            chat = self.chats[group_name]
 
-        chat = self.chats[group_name]
+            welcome, add = chat.session.add_member(user, b'0')
+            group_op = GroupOperation.from_instance(add)
 
-        welcome, add = chat.session.add_member(user, b'0')
-        group_op = GroupOperation.from_instance(add)
+            # add_payload = chat.session.encrypt_handshake_message(add)
 
-        self.send_welcome_to_user(user, welcome)
-        chat.users.append(User(user))
-        self.send_message_to_group(group_name=group_name, handshake=group_op)
+            self.send_welcome_to_user(user, welcome)
+            chat.users.append(User(user))
+            self.send_message_to_group(group_name=group_name, handshake=group_op)
 
-        # pylint: disable=unexpected-keyword-arg
-        name_update_msg = ChatProtocolMessage(
-            msg_type=ChatProtocolMessageType.USER_LIST,
-            contents=ChatUserListMessage(user_names=[user.name for user in chat.users])
-        )
+            # pylint: disable=unexpected-keyword-arg
+            name_update_msg = ChatProtocolMessage(
+                msg_type=ChatProtocolMessageType.USER_LIST,
+                contents=ChatUserListMessage(user_names=[user.name for user in chat.users])
+            )
 
-        self.send_message_to_group(group_name=group_name, message=name_update_msg.pack())
+            self.send_message_to_group(group_name=group_name, message=name_update_msg.pack())
+        except requests.exceptions.ConnectionError:
+            raise ConnectionError
 
-    def group_update(self, group_name):
-        chat = self.chats[group_name]
+    def group_update(self, chat: Chat):
         update_message = chat.session.update()
         group_op = GroupOperation.from_instance(update_message)
-        self.send_message_to_group(group_name=group_name, handshake=group_op)
+        self.send_message_to_group(group_name=chat.name, handshake=group_op)
 
     def get_recievers(self, chat_identifier: str) -> List[User]:
         """
@@ -249,105 +315,4 @@ class MLSClient(AbstractApplicationHandler):
         return []
 
     def dump_state_image(self, group_name: str):
-        self.chats[group_name].dumper.dump_next_state()
-
-
-class Menu:
-
-    def __init__(self, client: MLSClient):
-        self.client = client
-
-    def run(self):
-
-        menu_item: int = -1
-        while menu_item != 99:
-            print_main_menu()
-            menu_item = int(input("Enter number of menu item: ").strip())
-
-            self.process_input(menu_item)
-
-    def process_input(self, menu_item: int):
-        if menu_item == 1:
-            receiver = input("Enter Groupname:")
-            if receiver != "":
-                message = input("Enter Message:")
-                self.client.send_chat_message(message=message, group_id=receiver)
-                return
-            print("No Receiver found")
-        if menu_item == 2:
-            print(self.client.get_messages(self.client.user, self.client.device))
-        if menu_item == 3:
-            key = input("Enter new Auth Key")
-            self.client.publish_auth_key(self.client.user, self.client.device, key)
-        if menu_item == 4:
-            key = input("Enter new init key: ")
-            self.client.keystore.register_keypair(key.encode('ascii'), b'0')
-        if menu_item == 5:
-            # create grp
-            group_name = input("Group Name:").strip()
-            self.client.group_creation(group_name=group_name)
-        if menu_item == 6:
-            # Add member
-            group_name = input("Group Name:").strip()
-            user_to_add = input("User to add:").strip()
-
-            self.client.group_add(group_name=group_name, user=user_to_add)
-        if menu_item == 7:
-            group_name = input("Group Name:").strip()
-            self.client.group_update(group_name)
-        if menu_item == 8:
-            group_name = input("Group Name:").strip()
-            self.client.dump_state_image(group_name=group_name)
-
-
-
-def parse_arguments():
-    parser = argparse.ArgumentParser(description='MLS yo.')
-    parser.add_argument('-u', '--user', default='jan', type=str)
-
-    return parser.parse_args()
-
-
-def print_main_menu():
-    print("++++++++++++Main Menu++++++++++++")
-    print("1) Send Message")
-    print("2) Request Messages")
-    print("3) Send Authkey to Authserver")
-    print("4) Send Initkey to Dirserver")
-    print("5) Create Group")
-    print("6) Add Member")
-    print("7) Update keys")
-    print("8) Dump state")
-    print("99) Exit")
-    print("+++++++++++++++++++++++++++++++++")
-
-
-def main():
-    """
-    print menu and pass to according functions
-    quick and dirty menu
-    """
-
-    args = parse_arguments()
-    # load config_file
-    try:
-        with open("config.json", "r") as config_file:
-            config = json.load(config_file)
-            dir_server = config["dir_server"]
-            auth_server = config["auth_server"]
-            user = config["user"]
-            device = config["device"]
-    except (KeyError, FileNotFoundError):
-        # set defaults
-        dir_server = "127.0.0.1:5001"
-        auth_server = "127.0.0.1:5000"
-        user = args.user
-        device = "phone"
-
-    print(f"----Chatclient for----")
-    print(f"\tUser: {user}")
-    print(f"\tDevice: {device} ")
-
-    client = MLSClient(auth_server, dir_server, user, device)
-    menu = Menu(client=client)
-    menu.run()
+        return self.chats[group_name].dumper.dump_next_state()
