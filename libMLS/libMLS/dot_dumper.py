@@ -7,11 +7,31 @@ from libMLS.tree_math import parent
 from libMLS.tree_node import TreeNode
 
 
-def _node_to_dot(node: TreeNode, node_index: int) -> str:
+def _node_to_dot(node: Optional[TreeNode], node_index: int) -> str:
     return f"\"Index: {node_index}\\npub: {node.get_public_key().hex() if node is not None else 'Blank'}\""
 
 
+def _node_to_style(node: Optional[TreeNode]) -> str:
+    fillcolor = []
+
+    if node is not None and node.has_private_key():
+        fillcolor.append("silver")
+    # if node is not None and is_leaf(node_index):
+    #     fillcolor.append("lightgreen")
+
+    if len(fillcolor) == 0:
+        fillcolor = ["transparent"]
+
+    return f"[style=filled fillcolor=\"{':'.join(fillcolor)}\"]"
+
+
 class DotDumper:
+    """
+    This class is NOT part of the MLS protocol RFC, it is ONLY intendet for development purposes, a complete
+    security sinkhole and highly pythonic.
+    As with the rest of this MLS code, DO NOT USE THIS IN A PRODUCTION ENVIRONMENT
+    See the CRAP-L Licence in the project root folder for more infos.
+    """
 
     def __init__(self, session: Session, group_name: Optional[str] = None):
         self._session = session
@@ -26,7 +46,7 @@ class DotDumper:
         num_leafs = tree.get_num_leaves()
 
         for index, node in enumerate(nodes):
-            dot_contents += f"{_node_to_dot(node,index)}[style=filled fillcolor=transparent];\n"
+            dot_contents += f"{_node_to_dot(node, index)}{_node_to_style(node)}\n"
 
             parent_node = parent(index, num_leafs)
 
@@ -46,7 +66,13 @@ class DotDumper:
             overwrite_path = '/tmp/lastfile.svg'
 
         # pylint:disable=unexpected-keyword-arg
-        svg_data = subprocess.check_output(['dot', '-Tsvg'], input=str.encode(dot_source))
+        try:
+            svg_data = subprocess.check_output(['dot', '-Tsvg'], input=str.encode(dot_source))
+        except Exception as exception:
+            print(dot_source)
+            raise exception
+
+
         with open(overwrite_path, 'w') as tmp_file:
             tmp_file.write(svg_data.decode('utf-8'))
 

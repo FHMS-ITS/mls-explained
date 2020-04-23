@@ -1,4 +1,5 @@
 import functools
+import re
 from typing import List, Union, Dict
 
 import pytest
@@ -189,6 +190,9 @@ def test_dot_dumper_equals():
         other_sessions = create_session_with_n_members(i)
 
         all_dots = [DotDumper(session).dump_state_dot() for session in other_sessions]
+        # dot dumps must be equal with the exception of the style, which can be diffrent depending on
+        # the availability of private keys
+        all_dots = list(map(lambda x: re.sub(r"\[style=filled\ fillcolor=\"[\w\:]+\"\]", '', x), all_dots))
         for dot in all_dots[1:]:
             assert all_dots[0] == dot
 
