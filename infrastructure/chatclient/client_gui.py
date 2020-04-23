@@ -153,7 +153,7 @@ class ChatMenuBar(QToolBar):
     def show_state_button_function(self):
         if self.gui.active_chat is not None:
             path = self.client.dump_state_image(self.gui.active_chat.name)
-            self.dotwidget = DotWidget(path)
+            self.dotwidget = DotWidget(path, self.gui)
             self.dotwidget.move(self.gui.pos())
             self.dotwidget.show()
         else:

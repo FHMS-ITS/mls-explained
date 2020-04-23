@@ -1,7 +1,10 @@
-from typing import List
+import functools
+import re
+from typing import List, Union, Dict
 
 import pytest
 from libMLS.abstract_application_handler import AbstractApplicationHandler
+from libMLS.dot_dumper import DotDumper
 
 from libMLS.local_key_store_mock import LocalKeyStoreMock
 from libMLS.messages import UpdateMessage, WelcomeInfoMessage, AddMessage, GroupOperation, GroupOperationType
@@ -90,6 +93,36 @@ def create_session_with_n_members(num_members: int) -> List[Session]:
     return other_sessions
 
 
+def create_session_with_n_members_batched(num_members: int) -> List[Session]:
+    other_keystores = [LocalKeyStoreMock(f'{0}')]
+    other_keystores[-1].register_keypair(str(0).encode('ascii'), str(0).encode('ascii'))
+    other_sessions = [Session.from_empty(other_keystores[0], '0', 'teeest')]
+
+    messages_per_session: Dict[int, List[Union[AddMessage, WelcomeInfoMessage]]] = {0: []}
+
+    for i in range(1, num_members, 1):
+        other_keystores.append(LocalKeyStoreMock(f'{i}'))
+        other_keystores[-1].register_keypair(str(i).encode('ascii'), str(i).encode('ascii'))
+
+        welcome, add = other_sessions[0].add_member(f'{i}', str(i).encode('ascii'))
+        messages_per_session[i] = [welcome]
+
+        for key in messages_per_session.keys():
+            messages_per_session[key].append(add)
+
+    for index, messages in messages_per_session.items():
+
+        if index != 0:
+            session = Session.from_welcome(messages[0], other_keystores[index], f'{index}')
+            messages = messages[1:]
+            other_sessions.append(session)
+
+        for message in messages:
+            other_sessions[index].process_add(message)
+
+    return other_sessions
+
+
 @pytest.mark.dependency(name="test_create_session_with_many_members")
 def test_create_session_with_many_members():
     for i in range(3, 10, 1):
@@ -102,7 +135,6 @@ def test_create_session_with_many_members():
 
 @pytest.mark.dependency(depends=["test_create_session_with_many_members"])
 def test_update_session_with_many_members():
-
     for i in range(1, 10, 1):
         other_sessions = create_session_with_n_members(i)
 
@@ -113,6 +145,56 @@ def test_update_session_with_many_members():
         for session in other_sessions:
             assert other_sessions[0].get_state().get_tree() == session.get_state().get_tree()
             assert other_sessions[0].get_state().get_group_context() == session.get_state().get_group_context()
+
+
+@pytest.mark.dependency(depends=["test_create_session_with_many_members"])
+@pytest.mark.xfail(reason="Batch add does not work in protocol version 7")
+def test_batch_create_session_with_many_members():
+    for i in range(1, 10, 1):
+        other_sessions = create_session_with_n_members_batched(i)
+
+        for session in other_sessions:
+            assert other_sessions[0].get_state().get_tree() == session.get_state().get_tree()
+            assert other_sessions[0].get_state().get_group_context() == session.get_state().get_group_context()
+
+
+@pytest.mark.dependency(depends=["test_create_session_with_many_members"])
+def test_add_after_update_with_many_members():
+    for i in range(1, 10, 1):
+        other_sessions = create_session_with_n_members(i)
+
+        update_msg = other_sessions[0].update()
+        for session in other_sessions[1:]:
+            session.process_update(0, update_msg)
+
+        alice_store = LocalKeyStoreMock('alice')
+
+        alice_store.register_keypair(b'alice', b'alice')
+        welcome, add = other_sessions[len(other_sessions) - 1].add_member('alice', b'1')
+        alice_session = Session.from_welcome(welcome, alice_store, 'alice')
+        alice_session.process_add(add)
+
+        for session in other_sessions:
+            session.process_add(add)
+
+        for session in other_sessions:
+            assert other_sessions[0].get_state().get_tree() == session.get_state().get_tree()
+            assert other_sessions[0].get_state().get_group_context() == session.get_state().get_group_context()
+
+        assert alice_session.get_state().get_tree() == other_sessions[0].get_state().get_tree()
+
+
+@pytest.mark.dependency(depends=["test_create_session_with_many_members"])
+def test_dot_dumper_equals():
+    for i in range(1, 10, 1):
+        other_sessions = create_session_with_n_members(i)
+
+        all_dots = [DotDumper(session).dump_state_dot() for session in other_sessions]
+        # dot dumps must be equal with the exception of the style, which can be diffrent depending on
+        # the availability of private keys
+        all_dots = list(map(lambda x: re.sub(r"\[style=filled\ fillcolor=\"[\w\:]+\"\]", '', x), all_dots))
+        for dot in all_dots[1:]:
+            assert all_dots[0] == dot
 
 
 @pytest.mark.dependency(name="test_update_message")
