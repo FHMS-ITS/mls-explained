@@ -1,107 +1,91 @@
-[![pipeline status](https://git.fh-muenster.de/masterprojekt-mls/implementation/badges/master/pipeline.svg)](https://git.fh-muenster.de/masterprojekt-mls/implementation/commits/master)
-[![coverage report](https://git.fh-muenster.de/masterprojekt-mls/implementation/badges/master/coverage.svg)](https://git.fh-muenster.de/masterprojekt-mls/implementation/commits/master)
+# MLS Explained
+
+⚠️⚠️ **NEVER USE THIS CODE IN PRODUCTION** ⚠️⚠️
+
+⚠️⚠️ **THIS IS AN INSECURE IMPLEMENTATION** ⚠️⚠️
+
+⚠️⚠️ **ONLY FOR ACADEMIC PURPOSES** ⚠️⚠️
 
 
-(Der Coveragewert ist das Arithmetische Mittel aus allen Coveragewerten, siehe [hier](https://gitlab.com/gitlab-org/gitlab-ce/issues/22158))
-# MLS Umsetzung
+The MLS-Explained project tries to provide insides into the inner workings 
+of the [MLS Protocol](https://datatracker.ietf.org/doc/draft-ietf-mls-protocol/) 
+[version 7](https://datatracker.ietf.org/doc/draft-ietf-mls-protocol/07/).
 
-Dieses Repository vereint sowohl die Implementierung von MLS als [Chatprotokoll](https://datatracker.ietf.org/doc/draft-ietf-mls-protocol/),
-als auch eine Umsetzung von Tooling, das notwendig ist um einen Chatserver auf dem Protokoll zu
-betreiben (vgl [draft-ietf-mls-architecture](https://datatracker.ietf.org/doc/draft-ietf-mls-architecture/)).
+![Header Image](header.png)
 
-## Build Artefakte
+It contains three pieces of software written in python: 
+An implementation of MLS (called libMLS), an implementation of a dirserver 
+[based on version 3](https://datatracker.ietf.org/doc/draft-ietf-mls-architecture/03/) 
+of the [mls architecture rfc](https://datatracker.ietf.org/doc/draft-ietf-mls-architecture/) and a GUI application
+which includes a simple "chat protocol" which aims to visualize the inner workings of MLS.
 
-Für freundliche Projektbetreuer stellt dieses Projekt (dank CI) Buildartefakte zum
-direkten Download zur Verfügung, sodass kein keine Dev-Umgebung aufgesetzen werden muss.
+## Status of the implementation
 
-### Download
-** WORK IN PROGRESS **
+What has been implemented?
+- Group creation
+- Add Messages
+- Update Messages
+- Exchange of application messages
+- Message packing, passing and processing between remote clients
 
-### Using this Software
-** WORK IN PROGRESS **
+**➡️ Everything that makes this protocol work for simple chat applications** 
 
-## Development
 
-### Tooling
-#### Nix
-Dieses Projekt nutzt das [Nix Build Tool](https://nixos.org/nix/). Um das Projekt zu bauen,
-muss lediglich `nix-build` eingegeben werden. Üblicherweise reicht zur Installation ein `curl https://nixos.org/nix/install | sh`
+What it is not implemented?
+- Application Message Trees
+- Signature checking
+- Message Encryption
+- Mitigation of side channel attacks
+- Init messages (these have beed removed in later protocol drafts)
+- Remove messages
 
-##### Installationshinweis für Arch Nutzer
-Bei Installationsfehler "Clone Operation not permitted":
-https://github.com/NixOS/nix/issues/2633
+**➡️ Everything that would make this protocol secure** 
 
-Wenn nix-* Befehle nach Installation nicht verfügbar sind:
-https://github.com/NixOS/nix/issues/879#issuecomment-410904367
+## Target audience
 
-#### Git Workflow
-Pushes auf den Master sind in diesem Projekt verboten. Um eine Änderung einzureichen, musst
-ihr eure Änderungen auf einem neuen Branch einpflegen und von dort einen Pull-Request stellen.
+This repository is of interest for those who want to understand how exactly MLS works without being involved in
+the development process for ages. It aims to implement all the basic concepts of the protocol while removing everything
+that obstructs understanding.
 
-Um einen PR zu mergen braucht ihr {ein|zwei} Approve von anderen Teammitgliedern. Merges
-sind nur möglich, wenn die [CI](#CI) grün ist.
+Please take note that this implementation is the result of a two semester project course. Many code comments are still
+in German and most likely won't be translated as the project duration has ended as there are a lot of "hacks"
+to be found, especially in the gui clients. 
 
-Nachdem ein PR gemerged wurde, verwendet bitte den feature-branch nicht weiter, sondern
-erstellt einen neuen Branch. Es gilt _ein feature je branch_. 
+## Building
 
-**WICHTIG WICHTIG** 
-Sollte sich der Masterstand während der Laufzeit eures Branches ändern, **merged** nicht
-den master stand in ihn rein um ihn zu updaten, sondern **rebased** ihn, also
-`git pull --rebase origin master` auf eurem Branch. 
+This project uses the [nix build system](https://nixos.org/nix/). After installation you can build the project by
+running `nix-build` in the project root. No other dependencies are needed. `nix-build` also executes all tests as well
+as a linter.
 
-Bitte merged keine _Kaffeepausen_-Commits in den Master und gebt Ihnen sinnvolle Commitmassages 
-auf **DEUTSCH**. Auf euren Dev-Branches kann eure History aussehen wie sie will, ihr solltet sie
-nur mittels eines `git rebase -i HEAD~n`, mit `n` als Commit-Anzahl in eurem Branch, vor einem Merge
-umschreiben.
+After the build process is finished the binaries will be available in the `result` folder.
 
-#### CI
+## Running
 
-Dieses Projekt nutzt CI. Bei jedem Pull request wird die Software gebaut, alle Tests sowie
-der [Linter](#Linter) ausgeführt. 
+The GUI of this project can be run using `./result/infrastructure/bin/mls-chat-client-gui`. You can 
+start any number of gui instances to simulate a small communication. 
+You'll also need to start the dirserver at `./result/infrastructure/bin/mls-dir-server`.
 
-#### Linter
-
-Da in diesem Projekt Leute mit sehr diversen Background mitarbeiten, wird ein Linter genutzt 
-um einen gemeinsamen Codestyle zu erreichen, den jeder gut lesen kann. Im Falle der Python-Projekte 
-ist dies `pylint`.
-
-#### Python Environments
-Damit IDEs wie Pycharm wissen, was alles installiert ist und um Autocompletion hilfe zu
-geben, werden zu jedem python Projekt die Environments mit weggeschrieben.
-
-Dazu gibt es in jedem Python Projekt-Result (z.b. zum Dirserver) einen Ordner `env`.
-Hier liegt dann unter `env/bin/python3.7` ein Python interpreter, den ihr z.B. in
-Pycharm unter 
-`File=>Settings...=>Project=>Project Interpreter=>Zahnrad rechts=>Add...=>Add Existing Interpreter`
-angebt. In der Liste der installierten
-Packages werden zwar keine Einträge angezeigt, aber die Autocompletion geht. 
-Code ausführen solltet ihr am besten nur in der nix-shell des jeweiligen Projektes.
-
-## Projektstruktur
+## Project structure
 
 ```
 .
 ├── infrastructure
-│   ├── authserver
 │   ├── chatclient
 │   ├── dirserver
-│   │   ├── dirserver
-│   │   └── tests
 │   └── tests
-├── libMLS
-│   ├── libMLS
-│   └── tests
-└── tests
+├── integration_test
+└── libMLS
+    ├── libMLS
+    └── tests
+
     
 ```
 
-`libMLS`: Implementierung von MLS in Python
+`libMLS`: Implementation of MLS Protocol Version 7
 
 `infrastructure`: 
-- `authserver`: Implementierung des AS 
-- `dirserver`: Implementierung des Directory Servers
-- `chatclient`: Ein MLS Chat client mit GUI
+- `dirserver`: Implementation of a simple Directory & Auth Server
+- `chatclient`: A simple chat client in two versions: A command line interface and a qt-based gui application
 
-`tests`: Globale (Integrations-)Tests für alle Projekte
-
+`integration_test`: A bash script running multiple cli chat clients verify that basic interaction works
 
