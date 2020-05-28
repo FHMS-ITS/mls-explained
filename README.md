@@ -7,17 +7,17 @@
 ⚠️⚠️ **ONLY FOR ACADEMIC PURPOSES** ⚠️⚠️
 
 
-The MLS-Explained project tries to provide insides into the inner workings 
-of the [MLS Protocol](https://datatracker.ietf.org/doc/draft-ietf-mls-protocol/) 
+The MLS-Explained project tries to provide insight into the inner workings 
+of the [mls protocol](https://datatracker.ietf.org/doc/draft-ietf-mls-protocol/) 
 [version 7](https://datatracker.ietf.org/doc/draft-ietf-mls-protocol/07/).
 
 ![Header Image](header.png)
 
 It contains three pieces of software written in python: 
-An implementation of MLS (called libMLS), an implementation of a dirserver 
+An implementation of mls (called libMLS), an implementation of a dirserver 
 [based on version 3](https://datatracker.ietf.org/doc/draft-ietf-mls-architecture/03/) 
 of the [mls architecture rfc](https://datatracker.ietf.org/doc/draft-ietf-mls-architecture/) and a GUI application
-which includes a simple "chat protocol" which aims to visualize the inner workings of MLS.
+which includes a simple "chat protocol" which aims to visualize the inner workings of mls.
 
 ## Status of the implementation
 
@@ -34,7 +34,7 @@ What has been implemented?
 What it is not implemented?
 - Application Message Trees
 - Signature checking
-- Message Encryption
+- Message encryption
 - Mitigation of side channel attacks
 - Init messages (these have beed removed in later protocol drafts)
 - Remove messages
@@ -48,8 +48,8 @@ the development process for ages. It aims to implement all the basic concepts of
 that obstructs understanding.
 
 Please take note that this implementation is the result of a two semester project course. Many code comments are still
-in German and most likely won't be translated as the project duration has ended as there are a lot of "hacks"
-to be found, especially in the gui clients. 
+in German and most likely won't be translated as the project duration has ended. For the same reason a lot of "hacks"
+can be found, especially in the gui clients, which we never came around to fix. 
 
 ## Building
 
@@ -89,3 +89,9 @@ You'll also need to start the dirserver at `./result/infrastructure/bin/mls-dir-
 
 `integration_test`: A bash script running multiple cli chat clients verify that basic interaction works
 
+## 🎁Bonus content🎁
+
+Here is a little bonus content, we thought would be too helpful to let it rot in our internal repo: 
+
+A diagram illustrating how different secrets in mls interact:
+![mls secret derivations](MLS_Key_Secret_derivations.png)
