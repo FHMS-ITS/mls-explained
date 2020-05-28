@@ -51,6 +51,21 @@ Please take note that this implementation is the result of a two semester projec
 in German and most likely won't be translated as the project duration has ended. For the same reason a lot of "hacks"
 can be found, especially in the gui clients, which we never came around to fix. 
 
+## Where to start?
+
+If you really want to dig into our code I suggest you start with the test in `libMLS/tests`. These were maintained
+quite well and we achieved a solid 85% (solid for a academic project that is) percent test coverage. Especially
+`libMLS/test/test_communication.py` could be a good point to start, you could e.g. take a look at 
+`test_session_can_be_created_from_welcome` to know how we create a simple chat group with two users.
+
+We also employed our version of ["literate programming"](https://en.wikipedia.org/wiki/Literate_programming), which 
+means that you can find relevant parts of the mls rfc in the code where we implemented them. An example of this can
+be found in `libMLS/libMLS/cipher_suite.py`.
+
+As a last word of warning: Do not start you journey through our code with the infrastructure projects - 
+they may seem to be the natural starting point (especially the gui clients), but they are the least tested and were 
+thrown together to survive a few presentations.
+
 ## Building
 
 This project uses the [nix build system](https://nixos.org/nix/). After installation you can build the project by
